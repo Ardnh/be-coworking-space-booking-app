@@ -1,1637 +1,2221 @@
 #!/bin/bash
 
-# generate-simple-structure.sh
-# Script untuk generate struktur folder Clean Architecture versi Simple dengan Fiber
-# Usage: bash generate-simple-structure.sh [project-name]
+# ================================
+# Project Management Backend - Structure Generator
+# ================================
 
-PROJECT_NAME=${1:-"my-go-project"}
+set -e
 
-echo "🚀 Generating Clean Architecture Simple structure (Fiber) for: $PROJECT_NAME"
-echo "================================================"
+PROJECT_NAME="project-management-backend"
+CURRENT_DIR=$(pwd)
+
+echo "🚀 Creating Go project structure with Repository Pattern..."
+echo "Project: $PROJECT_NAME"
+echo "Location: $CURRENT_DIR/$PROJECT_NAME"
+echo ""
 
 # Create main project directory
 mkdir -p $PROJECT_NAME
 cd $PROJECT_NAME
 
-# Create folder structure
-echo "📁 Creating folder structure..."
+# ================================
+# Create Directory Structure
+# ================================
 
-folders=(
-    "cmd"
-    "config"
-    "models"
-    "handlers"
-    "repositories"
-    "middlewares"
-    "utils"
-    "routes"
-)
+echo "📁 Creating directory structure..."
 
-for folder in "${folders[@]}"; do
-    mkdir -p $folder
-    echo "✅ Created: $folder/"
-done
+# Main directories
+mkdir -p cmd/server
+mkdir -p internal/{config,domain,infrastructure,application,interfaces,utils}
+mkdir -p internal/domain/{entities,repositories,services}
+mkdir -p internal/infrastructure/{database,cache,external}
+mkdir -p internal/infrastructure/database/{mysql,migrations}
+mkdir -p internal/infrastructure/cache/{redis,interfaces}
+mkdir -p internal/infrastructure/external/{email,storage}
+mkdir -p internal/application/{services,dto}
+mkdir -p internal/interfaces/http/{handlers,middleware,routes,responses}
+mkdir -p internal/interfaces/grpc/{handlers,protos}
+mkdir -p internal/utils/{validator,jwt,password,database,helpers}
+mkdir -p pkg/{logger,errors,constants}
+mkdir -p api/{swagger,postman}
+mkdir -p scripts
+mkdir -p deployments/{docker,kubernetes}
+mkdir -p configs
+mkdir -p tests/{unit,integration,fixtures}
+mkdir -p tests/unit/{services,repositories,handlers}
+mkdir -p docs
 
-# ========================================
-# CMD Directory Documentation
-# ========================================
+echo "✅ Directory structure created!"
+
+# ================================
+# Create Documentation Files
+# ================================
+
+echo "📝 Creating documentation and README files..."
+
+# Root README
+cat > README.md << 'EOF'
+# Project Management Backend
+
+A robust project management backend built with **Go**, **Gin**, **GORM**, and **Redis** implementing **Repository Pattern** and **Clean Architecture**.
+
+## Architecture Overview
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Interface     │    │   Application   │    │     Domain      │
+│   (HTTP/gRPC)   │───▶│   (Services)    │───▶│   (Business)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Infrastructure │    │      Utils      │    │      Config     │
+│ (DB/Cache/API)  │    │   (Helpers)     │    │   (Settings)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+## Quick Start
+
+1. **Setup Project**
+   ```bash
+   go mod init github.com/yourusername/project-management-backend
+   go mod tidy
+   ```
+
+2. **Configure Environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your settings
+   ```
+
+3. **Run with Docker**
+   ```bash
+   make docker-up
+   ```
+
+## Directory Structure
+
+Each directory has its own README.md explaining its purpose and responsibilities.
+
+## Features
+
+- ✅ Clean Architecture with Repository Pattern
+- ✅ JWT Authentication & Authorization
+- ✅ Redis Caching Layer
+- ✅ MySQL Database with GORM
+- ✅ RESTful API with Gin
+- ✅ Docker Support
+- ✅ Comprehensive Testing
+- ✅ API Documentation
+- ✅ Database Migrations
+- ✅ Logging & Monitoring
+
+## Contributing
+
+Please read the individual README files in each directory to understand the codebase structure and conventions.
+EOF
+
+# cmd/ directory README
 cat > cmd/README.md << 'EOF'
-# CMD Directory
+# cmd/ - Application Entry Points
 
-## 📖 Filosofi
-CMD adalah singkatan dari **Command**. Folder ini berisi entry point aplikasi - tempat dimana program dimulai. Filosofinya adalah memisahkan kode startup aplikasi dari business logic, sehingga mudah untuk membuat multiple entry points jika diperlukan (misalnya: API server, CLI tools, workers).
+## Purpose
+Contains the main applications for this project. Each subdirectory represents a different executable.
 
-## 🎯 Definisi
-Directory yang berisi file `main.go` sebagai entry point aplikasi. Di sinilah semua komponen aplikasi (database, repositories, handlers, routes) diinisialisasi dan dihubungkan.
-
-## 💡 Tanggung Jawab
-- Inisialisasi konfigurasi
-- Setup database connection
-- Dependency injection (manual)
-- Setup Fiber app
-- Graceful shutdown handling
-
-## 📝 Contoh Struktur
+## Structure
 ```
 cmd/
-├── main.go           # Entry point utama
-└── README.md         # Dokumentasi ini
+└── server/
+    └── main.go          # Main HTTP server entry point
 ```
 
-## 🔧 Contoh Kode
+## Responsibilities
+- **Application Bootstrap**: Initialize all dependencies and start services
+- **Configuration Loading**: Load environment variables and config files
+- **Dependency Injection**: Wire up all components (repositories, services, handlers)
+- **Server Startup**: Start HTTP server, gRPC server, or other services
+- **Graceful Shutdown**: Handle shutdown signals and cleanup resources
+
+## Guidelines
+- Keep main.go files **thin** - delegate to other packages
+- Handle **dependency injection** at this level
+- Implement **graceful shutdown** for production readiness
+- Log **startup information** and errors appropriately
+- Each cmd should be a **single responsibility** application
+
+## Example main.go Structure
 ```go
-package main
-
-import (
-    "log"
-    "os"
-    "os/signal"
-    "myproject/config"
-    "myproject/handlers"
-    "myproject/repositories"
-    "myproject/routes"
-    "github.com/gofiber/fiber/v2"
-    "github.com/gofiber/fiber/v2/middleware/logger"
-    "github.com/gofiber/fiber/v2/middleware/recover"
-)
-
 func main() {
     // 1. Load configuration
-    cfg := config.LoadConfig()
-
-    // 2. Connect to database
-    db := config.ConnectDB(cfg)
-
-    // 3. Initialize repositories
-    userRepo := repositories.NewUserRepository(db)
-    productRepo := repositories.NewProductRepository(db)
-
-    // 4. Initialize handlers
-    userHandler := handlers.NewUserHandler(userRepo)
-    productHandler := handlers.NewProductHandler(productRepo)
-
-    // 5. Create Fiber app
-    app := fiber.New(fiber.Config{
-        ErrorHandler: customErrorHandler,
-        AppName:      "My API v1.0.0",
-    })
-
-    // 6. Global middlewares
-    app.Use(recover.New())
-    app.Use(logger.New())
-
-    // 7. Setup routes
-    routes.SetupRoutes(app, userHandler, productHandler)
-
-    // 8. Graceful shutdown
-    c := make(chan os.Signal, 1)
-    signal.Notify(c, os.Interrupt)
-    go func() {
-        <-c
-        log.Println("🛑 Gracefully shutting down...")
-        app.Shutdown()
-    }()
-
-    // 9. Start server
-    log.Printf("🚀 Server running on port %s", cfg.Port)
-    if err := app.Listen(":" + cfg.Port); err != nil {
-        log.Fatal("❌ Failed to start server:", err)
-    }
-}
-
-func customErrorHandler(c *fiber.Ctx, err error) error {
-    code := fiber.StatusInternalServerError
-
-    if e, ok := err.(*fiber.Error); ok {
-        code = e.Code
-    }
-
-    return c.Status(code).JSON(fiber.Map{
-        "status":  "error",
-        "message": err.Error(),
-    })
+    // 2. Initialize logger
+    // 3. Setup database connection
+    // 4. Initialize Redis
+    // 5. Wire up repositories
+    // 6. Wire up services
+    // 7. Setup HTTP handlers
+    // 8. Start server with graceful shutdown
 }
 ```
 
-## ⚠️ Best Practices
-- ✅ Keep main.go thin - hanya untuk wiring dependencies
-- ✅ Jangan taruh business logic di sini
-- ✅ Gunakan dependency injection pattern
-- ✅ Handle graceful shutdown untuk production
-- ✅ Setup custom error handler
-- ❌ Jangan hardcode values - gunakan config
-
-## 🎓 Tips Fiber
-- Fiber lebih cepat dari Gin (inspired by Express.js)
-- Fiber menggunakan fasthttp (bukan net/http)
-- Error handling lebih simple dengan return values
-- Built-in middleware sangat lengkap
+## Future Extensions
+- `cmd/migrator/` - Database migration tool
+- `cmd/seeder/` - Database seeding tool
+- `cmd/worker/` - Background job processor
+- `cmd/cli/` - Command line interface
 EOF
 
-# ========================================
-# CONFIG Directory Documentation
-# ========================================
-cat > config/README.md << 'EOF'
-# CONFIG Directory
+# internal/ directory README
+cat > internal/README.md << 'EOF'
+# internal/ - Private Application Code
 
-## 📖 Filosofi
-**"Configuration should be external, not hardcoded"**. Filosofi dari folder config adalah memisahkan semua konfigurasi aplikasi ke satu tempat yang mudah dikelola. Ini mengikuti prinsip 12-Factor App dimana config harus disimpan di environment variables.
+## Purpose
+Contains the private application and library code. Code in this directory cannot be imported by external applications.
 
-## 🎯 Definisi
-Directory yang berisi file-file untuk mengelola konfigurasi aplikasi seperti database connection, API keys, server port, dan pengaturan lainnya. Biasanya menggunakan environment variables atau file konfigurasi (.env, .yaml, .json).
+## Architecture Layers
 
-## 💡 Tanggung Jawab
-- Load environment variables
-- Validasi konfigurasi
-- Setup database connection
-- Manage external service credentials
-- Environment-specific settings (dev, staging, prod)
-
-## 📝 Contoh Struktur
+### 🏗️ Clean Architecture Implementation
 ```
-config/
-├── config.go         # Load & validate config
-├── database.go       # Database connection setup
-└── README.md         # Dokumentasi ini
-```
-
-## 🔧 Contoh Kode
-
-### config.go
-```go
-package config
-
-import (
-    "log"
-    "os"
-    "github.com/joho/godotenv"
-)
-
-type Config struct {
-    // Server
-    Port        string
-    Environment string
-
-    // Database
-    DBHost     string
-    DBPort     string
-    DBUser     string
-    DBPassword string
-    DBName     string
-
-    // JWT
-    JWTSecret string
-
-    // External APIs
-    PaymentAPIKey string
-}
-
-func LoadConfig() *Config {
-    // Load .env file
-    if err := godotenv.Load(); err != nil {
-        log.Println("⚠️  No .env file found, using system environment variables")
-    }
-
-    config := &Config{
-        Port:          getEnv("PORT", "3000"),
-        Environment:   getEnv("ENVIRONMENT", "development"),
-        DBHost:        getEnv("DB_HOST", "localhost"),
-        DBPort:        getEnv("DB_PORT", "5432"),
-        DBUser:        getEnv("DB_USER", "postgres"),
-        DBPassword:    getEnv("DB_PASSWORD", ""),
-        DBName:        getEnv("DB_NAME", "myapp"),
-        JWTSecret:     getEnv("JWT_SECRET", "your-secret-key"),
-        PaymentAPIKey: getEnv("PAYMENT_API_KEY", ""),
-    }
-
-    // Validate critical configs
-    if config.DBPassword == "" {
-        log.Fatal("❌ DB_PASSWORD is required")
-    }
-
-    if config.JWTSecret == "your-secret-key" {
-        log.Println("⚠️  WARNING: Using default JWT secret. Change this in production!")
-    }
-
-    return config
-}
-
-func getEnv(key, defaultValue string) string {
-    if value := os.Getenv(key); value != "" {
-        return value
-    }
-    return defaultValue
-}
+┌─────────────────────────────────────────────────────────┐
+│                    External Interfaces                  │
+│                   (HTTP, gRPC, CLI)                    │
+├─────────────────────────────────────────────────────────┤
+│                   Application Layer                     │
+│              (Use Cases, DTOs, Services)               │
+├─────────────────────────────────────────────────────────┤
+│                     Domain Layer                        │
+│           (Entities, Repositories, Services)           │
+├─────────────────────────────────────────────────────────┤
+│                 Infrastructure Layer                    │
+│            (Database, Cache, External APIs)            │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### database.go
-```go
-package config
+## Directory Structure
 
-import (
-    "fmt"
-    "log"
-    "gorm.io/driver/postgres"
-    "gorm.io/gorm"
-    "gorm.io/gorm/logger"
-)
+### `/domain` - Business Logic Core
+- **Entities**: Core business objects
+- **Repositories**: Data access interfaces
+- **Services**: Business logic interfaces
 
-func ConnectDB(cfg *Config) *gorm.DB {
-    dsn := fmt.Sprintf(
-        "host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-        cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName,
-    )
+### `/application` - Application Services
+- **Services**: Use case implementations
+- **DTOs**: Data Transfer Objects
 
-    // Configure GORM logger
-    logLevel := logger.Silent
-    if cfg.Environment == "development" {
-        logLevel = logger.Info
-    }
+### `/infrastructure` - External Dependencies
+- **Database**: Database implementations
+- **Cache**: Caching implementations
+- **External**: Third-party integrations
 
-    db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-        Logger: logger.Default.LogMode(logLevel),
-    })
+### `/interfaces` - External Communication
+- **HTTP**: REST API handlers
+- **gRPC**: gRPC service implementations
 
-    if err != nil {
-        log.Fatal("❌ Failed to connect to database:", err)
-    }
+### `/utils` - Helper Functions
+- Common utilities and helpers
+- Cross-cutting concerns
 
-    log.Println("✅ Database connected successfully")
-    return db
-}
-```
+### `/config` - Configuration
+- Configuration structures
+- Environment setup
 
-## ⚠️ Best Practices
-- ✅ Gunakan environment variables untuk sensitive data
-- ✅ Provide default values untuk non-critical configs
-- ✅ Validasi konfigurasi saat startup
-- ✅ Jangan commit file .env ke git
-- ✅ Buat .env.example sebagai template
-- ❌ Jangan hardcode credentials di code
+## Design Principles
 
-## 🎓 Tips
-- Gunakan library seperti `godotenv` untuk load .env files
-- Untuk production, gunakan secret management (AWS Secrets Manager, Vault)
-- Buat config berbeda per environment (dev, staging, prod)
+1. **Dependency Inversion**: Depend on interfaces, not implementations
+2. **Single Responsibility**: Each package has one reason to change
+3. **Open/Closed**: Open for extension, closed for modification
+4. **Interface Segregation**: Small, focused interfaces
+5. **Dependency Injection**: Wire dependencies at startup
+
+## Key Rules
+- Domain layer **never** depends on infrastructure
+- Infrastructure **implements** domain interfaces
+- Application **orchestrates** domain operations
+- Interfaces **adapt** external communications
 EOF
 
-# ========================================
-# MODELS Directory Documentation
-# ========================================
-cat > models/README.md << 'EOF'
-# MODELS Directory
+# internal/domain/ directory README
+cat > internal/domain/README.md << 'EOF'
+# internal/domain/ - Business Domain Layer
 
-## 📖 Filosofi
-**"Models are the source of truth about your data"**. Models merepresentasikan struktur data aplikasi dan business entities. Filosofinya adalah memiliki single source of truth untuk struktur data yang digunakan di seluruh aplikasi.
+## Purpose
+The heart of the application containing business logic, entities, and core interfaces. This layer is **framework-agnostic** and represents pure business rules.
 
-## 🎯 Definisi
-Directory yang berisi definisi struct Go yang merepresentasikan tabel database dan business entities. Menggunakan GORM tags untuk mapping ke database dan JSON tags untuk API responses.
-
-## 💡 Tanggung Jawab
-- Definisi struktur data (entities)
-- Database schema mapping (via GORM tags)
-- JSON serialization rules
-- Data validation rules
-- Business rules di level entity
-- Relationships antar entities
-
-## 📝 Contoh Struktur
+## Structure
 ```
-models/
-├── user.go           # User entity
-├── product.go        # Product entity
-├── order.go          # Order entity
-├── common.go         # Shared models (timestamps, pagination)
-└── README.md         # Dokumentasi ini
+domain/
+├── entities/              # Business entities (domain models)
+├── repositories/          # Data access interfaces
+└── services/             # Business logic interfaces
 ```
 
-## 🔧 Contoh Kode
+## Responsibilities
 
-### user.go
+### 📦 entities/
+- **Domain Models**: Core business objects with behavior
+- **Value Objects**: Immutable objects representing concepts
+- **Aggregates**: Groups of related entities
+- **Business Rules**: Domain-specific validation and logic
+
+**Example**: `User`, `Project`, `Category`, `ProjectTodolist`
+
+### 🔄 repositories/
+- **Data Access Interfaces**: Abstract data operations
+- **Query Specifications**: Define complex queries
+- **Repository Contracts**: Define what data operations are needed
+
+**Example**: `UserRepository`, `ProjectRepository`
+
+### ⚙️ services/
+- **Business Logic Interfaces**: Define business operations
+- **Domain Services**: Coordinate between entities
+- **Business Rules**: Complex business logic that doesn't fit in entities
+
+**Example**: `AuthService`, `ProjectService`
+
+## Design Principles
+
+### ✅ What Goes Here
+- Business entities with behavior
+- Domain-specific validation rules
+- Business logic interfaces
+- Domain events and specifications
+- Value objects and aggregates
+
+### ❌ What Doesn't Go Here
+- Database-specific code
+- HTTP request/response models
+- Framework dependencies
+- External API integrations
+- Infrastructure concerns
+
+## Entity Guidelines
 ```go
-package models
-
-import (
-    "time"
-    "github.com/google/uuid"
-    "gorm.io/gorm"
-)
-
-type User struct {
-    ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
-    Email     string    `gorm:"uniqueIndex;not null" json:"email"`
-    Name      string    `gorm:"not null" json:"name"`
-    Password  string    `gorm:"not null" json:"-"` // Hidden from JSON
-    Role      string    `gorm:"type:varchar(20);default:'user'" json:"role"`
-    IsActive  bool      `gorm:"default:true" json:"is_active"`
-    CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
-    UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
-
-    // Relationships
-    Orders []Order `gorm:"foreignKey:UserID" json:"orders,omitempty"`
+// ✅ Good - Business logic in entity
+type Project struct {
+    ID     int
+    Name   string
+    Budget decimal.Decimal
+    Status ProjectStatus
 }
 
-// BeforeCreate - GORM hook
-func (u *User) BeforeCreate(tx *gorm.DB) error {
-    u.ID = uuid.New()
+func (p *Project) CanAddExpense(amount decimal.Decimal) error {
+    if p.Status != StatusActive {
+        return ErrProjectNotActive
+    }
+    if p.GetRemainingBudget().LessThan(amount) {
+        return ErrInsufficientBudget
+    }
     return nil
 }
 
-// TableName - Custom table name
-func (User) TableName() string {
-    return "users"
-}
-
-// Business logic methods
-func (u *User) IsAdmin() bool {
-    return u.Role == "admin"
-}
-
-func (u *User) CanDelete() bool {
-    return !u.IsAdmin() // Admin tidak bisa dihapus
+// ❌ Bad - Infrastructure concerns in domain
+type Project struct {
+    ID     int    `gorm:"primary_key"` // Database specific
+    Name   string `json:"name"`        // HTTP specific
 }
 ```
 
-### product.go
+## Repository Interface Guidelines
 ```go
-package models
-
-import (
-    "errors"
-    "time"
-    "github.com/google/uuid"
-)
-
-type Product struct {
-    ID          uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
-    Name        string    `gorm:"not null" json:"name"`
-    Description string    `gorm:"type:text" json:"description"`
-    Price       float64   `gorm:"type:decimal(10,2);not null" json:"price"`
-    Stock       int       `gorm:"default:0" json:"stock"`
-    CategoryID  uuid.UUID `gorm:"type:uuid" json:"category_id"`
-    IsActive    bool      `gorm:"default:true" json:"is_active"`
-    CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
-    UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
-
-    // Relationships
-    Category Category `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
+// ✅ Good - Domain-focused interface
+type ProjectRepository interface {
+    Save(ctx context.Context, project *Project) error
+    FindByID(ctx context.Context, id int) (*Project, error)
+    FindActiveProjects(ctx context.Context) ([]*Project, error)
 }
 
-// Business methods
-func (p *Product) IsAvailable() bool {
-    return p.IsActive && p.Stock > 0
-}
-
-func (p *Product) ReduceStock(quantity int) error {
-    if p.Stock < quantity {
-        return errors.New("insufficient stock")
-    }
-    p.Stock -= quantity
-    return nil
+// ❌ Bad - Implementation-specific
+type ProjectRepository interface {
+    SaveToDB(project *Project) error    // DB specific
+    FindWithSQL(query string) []Project // SQL specific
 }
 ```
 
-### order.go
-```go
-package models
+## Testing
+- Focus on **business logic** testing
+- Mock external dependencies
+- Test domain rules and validations
+- Ensure entities maintain invariants
 
-import (
-    "time"
-    "github.com/google/uuid"
-)
-
-type OrderStatus string
-
-const (
-    OrderPending   OrderStatus = "pending"
-    OrderPaid      OrderStatus = "paid"
-    OrderShipped   OrderStatus = "shipped"
-    OrderDelivered OrderStatus = "delivered"
-    OrderCancelled OrderStatus = "cancelled"
-)
-
-type Order struct {
-    ID         uuid.UUID   `gorm:"type:uuid;primaryKey" json:"id"`
-    UserID     uuid.UUID   `gorm:"type:uuid;not null" json:"user_id"`
-    TotalPrice float64     `gorm:"type:decimal(10,2);not null" json:"total_price"`
-    Status     OrderStatus `gorm:"type:varchar(20);default:'pending'" json:"status"`
-    CreatedAt  time.Time   `gorm:"autoCreateTime" json:"created_at"`
-    UpdatedAt  time.Time   `gorm:"autoUpdateTime" json:"updated_at"`
-
-    // Relationships
-    User       User        `gorm:"foreignKey:UserID" json:"user,omitempty"`
-    OrderItems []OrderItem `gorm:"foreignKey:OrderID" json:"order_items,omitempty"`
-}
-
-type OrderItem struct {
-    ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
-    OrderID   uuid.UUID `gorm:"type:uuid;not null" json:"order_id"`
-    ProductID uuid.UUID `gorm:"type:uuid;not null" json:"product_id"`
-    Quantity  int       `gorm:"not null" json:"quantity"`
-    Price     float64   `gorm:"type:decimal(10,2);not null" json:"price"`
-
-    // Relationships
-    Product Product `gorm:"foreignKey:ProductID" json:"product,omitempty"`
-}
-```
-
-## ⚠️ Best Practices
-- ✅ Gunakan UUID untuk primary key (lebih secure)
-- ✅ Selalu set `json:"-"` untuk password
-- ✅ Gunakan pointer (*) untuk optional fields
-- ✅ Buat method untuk business logic di model
-- ✅ Gunakan GORM hooks (BeforeCreate, AfterCreate, dll)
-- ❌ Jangan taruh database query di models
-- ❌ Jangan taruh HTTP logic di models
-
-## 🎓 Tips
-- Gunakan `omitempty` untuk relationships agar JSON tidak bloat
-- Buat constants untuk enum values (OrderStatus)
-- Models hanya tentang data structure, bukan data access
+This layer should be the **most stable** and **well-tested** part of your application.
 EOF
 
-# ========================================
-# HANDLERS Directory Documentation
-# ========================================
-cat > handlers/README.md << 'EOF'
-# HANDLERS Directory
+# internal/application/ directory README
+cat > internal/application/README.md << 'EOF'
+# internal/application/ - Application Layer
 
-## 📖 Filosofi
-**"Handlers are the gateway between HTTP and your business logic"**. Filosofinya adalah memisahkan HTTP concerns (request/response handling) dari business logic. Handlers bertanggung jawab menerima HTTP request, validasi input, memanggil repository, dan mengembalikan HTTP response.
+## Purpose
+Contains the application's use cases and orchestrates the flow between the domain layer and external interfaces. This layer **implements business workflows**.
 
-## 🎯 Definisi
-Directory yang berisi HTTP handlers (atau controllers dalam MVC pattern). Handlers menerima HTTP requests, memproses data, berinteraksi dengan repositories, dan mengembalikan HTTP responses menggunakan Fiber.
-
-## 💡 Tanggung Jawab
-- Parse HTTP request (JSON body, query params, URL params)
-- Validasi input
-- Call repository methods (business logic)
-- Handle errors
-- Format & return HTTP response
-- Set appropriate HTTP status codes
-
-## 📝 Contoh Struktur
+## Structure
 ```
-handlers/
-├── user_handler.go      # User CRUD operations
-├── product_handler.go   # Product operations
-├── auth_handler.go      # Authentication (login, register)
-└── README.md            # Dokumentasi ini
+application/
+├── services/             # Use case implementations
+└── dto/                 # Data Transfer Objects
 ```
 
-## 🔧 Contoh Kode
+## Responsibilities
 
-### user_handler.go
+### 🔧 services/
+- **Use Case Implementation**: Execute business workflows
+- **Transaction Management**: Coordinate database transactions
+- **Business Process Orchestration**: Coordinate multiple domain services
+- **Data Validation**: Validate input before domain operations
+- **External Service Integration**: Call external APIs as part of workflows
+
+**Key Characteristics**:
+- Implements interfaces defined in `domain/services/`
+- Depends on domain repositories and services
+- Contains **no business rules** (delegates to domain)
+- Focuses on **workflow coordination**
+
+### 📄 dto/
+- **Data Transfer Objects**: Represent data contracts with external layers
+- **Request/Response Models**: HTTP API contracts
+- **Mapping Functions**: Convert between DTOs and domain entities
+- **Validation Rules**: Input validation annotations
+
+## Service Implementation Pattern
+
 ```go
-package handlers
-
-import (
-    "myproject/models"
-    "myproject/repositories"
-    "myproject/utils"
-    "github.com/gofiber/fiber/v2"
-    "github.com/google/uuid"
-    "golang.org/x/crypto/bcrypt"
-)
-
-type UserHandler struct {
-    repo *repositories.UserRepository
+type userService struct {
+    userRepo     repositories.UserRepository
+    emailService external.EmailService
+    cache        cache.CacheInterface
+    logger       logger.Logger
 }
 
-func NewUserHandler(repo *repositories.UserRepository) *UserHandler {
-    return &UserHandler{repo: repo}
-}
-
-// Create - POST /users
-func (h *UserHandler) Create(c *fiber.Ctx) error {
-    // 1. Parse request body
-    var input struct {
-        Email    string `json:"email" validate:"required,email"`
-        Name     string `json:"name" validate:"required"`
-        Password string `json:"password" validate:"required,min=6"`
+func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*dto.UserResponse, error) {
+    // 1. Validate input (application concern)
+    if err := s.validateCreateUserRequest(req); err != nil {
+        return nil, err
     }
 
-    if err := c.BodyParser(&input); err != nil {
-        return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid input: "+err.Error())
+    // 2. Check business rules (delegate to domain)
+    if exists, _ := s.userRepo.ExistsByEmail(ctx, req.Email); exists {
+        return nil, domain.ErrEmailAlreadyExists
     }
 
-    // 2. Validate input
-    if err := utils.ValidateStruct(input); err != nil {
-        return utils.ValidationErrorResponse(c, err)
+    // 3. Create domain entity
+    user := &entities.User{
+        Username: req.Username,
+        Email:    req.Email,
     }
 
-    // 3. Check if email exists
-    existing, _ := h.repo.GetByEmail(input.Email)
-    if existing != nil {
-        return utils.ErrorResponse(c, fiber.StatusConflict, "Email already exists")
+    // 4. Domain operation
+    if err := user.SetPassword(req.Password); err != nil {
+        return nil, err
     }
 
-    // 4. Hash password
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-    if err != nil {
-        return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to process password")
+    // 5. Persist (infrastructure)
+    if err := s.userRepo.Save(ctx, user); err != nil {
+        return nil, err
     }
 
-    // 5. Create user
-    user := models.User{
-        ID:       uuid.New(),
-        Email:    input.Email,
-        Name:     input.Name,
-        Password: string(hashedPassword),
-        Role:     "user",
-        IsActive: true,
-    }
+    // 6. Side effects (external services)
+    go s.emailService.SendWelcomeEmail(user.Email)
 
-    if err := h.repo.Create(&user); err != nil {
-        return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to create user")
-    }
+    // 7. Cache update
+    s.cache.Delete(ctx, fmt.Sprintf("user_list_*"))
 
-    // 6. Return response (hide password)
-    user.Password = ""
-    return utils.SuccessResponse(c, fiber.StatusCreated, "User created successfully", user)
-}
-
-// GetByID - GET /users/:id
-func (h *UserHandler) GetByID(c *fiber.Ctx) error {
-    // 1. Get ID from URL param
-    id := c.Params("id")
-
-    // 2. Validate UUID
-    if _, err := uuid.Parse(id); err != nil {
-        return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid user ID")
-    }
-
-    // 3. Get user from database
-    user, err := h.repo.GetByID(id)
-    if err != nil {
-        return utils.ErrorResponse(c, fiber.StatusNotFound, "User not found")
-    }
-
-    // 4. Hide password
-    user.Password = ""
-
-    // 5. Return response
-    return utils.SuccessResponse(c, fiber.StatusOK, "User fetched successfully", user)
-}
-
-// GetAll - GET /users
-func (h *UserHandler) GetAll(c *fiber.Ctx) error {
-    // 1. Parse query parameters
-    role := c.Query("role")        // ?role=admin
-    isActive := c.Query("is_active") // ?is_active=true
-
-    // 2. Build filter
-    filter := make(map[string]interface{})
-    if role != "" {
-        filter["role"] = role
-    }
-    if isActive == "true" {
-        filter["is_active"] = true
-    } else if isActive == "false" {
-        filter["is_active"] = false
-    }
-
-    // 3. Get users
-    users, err := h.repo.GetAll(filter)
-    if err != nil {
-        return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to fetch users")
-    }
-
-    // 4. Hide passwords
-    for i := range users {
-        users[i].Password = ""
-    }
-
-    // 5. Return response
-    return utils.SuccessResponse(c, fiber.StatusOK, "Users fetched successfully", fiber.Map{
-        "users": users,
-        "total": len(users),
-    })
-}
-
-// Update - PUT /users/:id
-func (h *UserHandler) Update(c *fiber.Ctx) error {
-    // 1. Get ID
-    id := c.Params("id")
-
-    // 2. Check if user exists
-    user, err := h.repo.GetByID(id)
-    if err != nil {
-        return utils.ErrorResponse(c, fiber.StatusNotFound, "User not found")
-    }
-
-    // 3. Parse update data
-    var input struct {
-        Name     string `json:"name"`
-        IsActive *bool  `json:"is_active"` // Pointer untuk optional
-    }
-
-    if err := c.BodyParser(&input); err != nil {
-        return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid input")
-    }
-
-    // 4. Update fields
-    if input.Name != "" {
-        user.Name = input.Name
-    }
-    if input.IsActive != nil {
-        user.IsActive = *input.IsActive
-    }
-
-    // 5. Save to database
-    if err := h.repo.Update(user); err != nil {
-        return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to update user")
-    }
-
-    // 6. Return response
-    user.Password = ""
-    return utils.SuccessResponse(c, fiber.StatusOK, "User updated successfully", user)
-}
-
-// Delete - DELETE /users/:id
-func (h *UserHandler) Delete(c *fiber.Ctx) error {
-    // 1. Get ID
-    id := c.Params("id")
-
-    // 2. Check if user exists
-    user, err := h.repo.GetByID(id)
-    if err != nil {
-        return utils.ErrorResponse(c, fiber.StatusNotFound, "User not found")
-    }
-
-    // 3. Business rule: Admin tidak bisa dihapus
-    if user.IsAdmin() {
-        return utils.ErrorResponse(c, fiber.StatusForbidden, "Cannot delete admin user")
-    }
-
-    // 4. Delete user
-    if err := h.repo.Delete(id); err != nil {
-        return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to delete user")
-    }
-
-    // 5. Return response
-    return utils.SuccessResponse(c, fiber.StatusOK, "User deleted successfully", nil)
+    // 8. Return response DTO
+    return dto.ToUserResponse(user), nil
 }
 ```
 
-### auth_handler.go
+## DTO Guidelines
+
+### ✅ Good DTO Design
 ```go
-package handlers
-
-import (
-    "myproject/models"
-    "myproject/repositories"
-    "myproject/utils"
-    "github.com/gofiber/fiber/v2"
-    "golang.org/x/crypto/bcrypt"
-)
-
-type AuthHandler struct {
-    userRepo *repositories.UserRepository
+// Request DTOs - Input validation
+type CreateProjectRequest struct {
+    Name        string  `json:"name" validate:"required,min=3,max=100"`
+    Description string  `json:"description" validate:"max=500"`
+    Budget      float64 `json:"budget" validate:"min=0"`
+    CategoryID  int     `json:"category_id" validate:"required"`
 }
 
-func NewAuthHandler(userRepo *repositories.UserRepository) *AuthHandler {
-    return &AuthHandler{userRepo: userRepo}
+// Response DTOs - Output formatting
+type ProjectResponse struct {
+    ID          int       `json:"id"`
+    Name        string    `json:"name"`
+    Budget      float64   `json:"budget"`
+    CreatedAt   time.Time `json:"created_at"`
 }
 
-// Login - POST /auth/login
-func (h *AuthHandler) Login(c *fiber.Ctx) error {
-    var input struct {
-        Email    string `json:"email" validate:"required,email"`
-        Password string `json:"password" validate:"required"`
+// Conversion functions
+func ToProjectResponse(project *entities.Project) *ProjectResponse {
+    return &ProjectResponse{
+        ID:        project.ID,
+        Name:      project.Name,
+        Budget:    project.Budget,
+        CreatedAt: project.CreatedAt,
     }
+}
+```
 
-    if err := c.BodyParser(&input); err != nil {
-        return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid input")
-    }
+### ❌ Bad DTO Design
+```go
+// Don't expose domain entities directly
+type CreateProjectRequest struct {
+    Project entities.Project `json:"project"` // ❌ Tight coupling
+}
 
-    // Validate
-    if err := utils.ValidateStruct(input); err != nil {
-        return utils.ValidationErrorResponse(c, err)
-    }
+// Don't include infrastructure concerns
+type ProjectResponse struct {
+    entities.Project          // ❌ Exposing internal structure
+    Password        string    // ❌ Sensitive data
+}
+```
 
-    // Get user by email
-    user, err := h.userRepo.GetByEmail(input.Email)
-    if err != nil {
-        return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Invalid credentials")
-    }
+## Service Guidelines
 
-    // Check password
-    if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-        return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Invalid credentials")
-    }
+### ✅ Application Service Responsibilities
+- Validate input from external sources
+- Coordinate multiple domain operations
+- Manage transactions across repositories
+- Handle external service integrations
+- Cache management
+- Logging and monitoring
+- DTO conversions
 
-    // Check if active
-    if !user.IsActive {
-        return utils.ErrorResponse(c, fiber.StatusForbidden, "Account is inactive")
-    }
+### ❌ What Not To Include
+- Business rules (belongs in domain)
+- Database queries (belongs in infrastructure)
+- HTTP status codes (belongs in interface)
+- Framework-specific code
 
-    // Generate JWT token
-    token, err := utils.GenerateJWT(user.ID.String(), user.Email, user.Role)
-    if err != nil {
-        return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to generate token")
-    }
+## Transaction Management
+```go
+func (s *projectService) CreateProjectWithTasks(ctx context.Context, req *dto.CreateProjectWithTasksRequest) error {
+    return s.db.Transaction(func(tx *gorm.DB) error {
+        // Use transaction-aware repositories
+        projectRepo := s.projectRepo.WithTx(tx)
+        taskRepo := s.taskRepo.WithTx(tx)
 
-    return utils.SuccessResponse(c, fiber.StatusOK, "Login successful", fiber.Map{
-        "token": token,
-        "user": fiber.Map{
-            "id":    user.ID,
-            "email": user.Email,
-            "name":  user.Name,
-            "role":  user.Role,
-        },
+        // Create project
+        project := dto.ToProject(req.Project)
+        if err := projectRepo.Save(ctx, project); err != nil {
+            return err
+        }
+
+        // Create tasks
+        for _, taskReq := range req.Tasks {
+            task := dto.ToTask(taskReq)
+            task.ProjectID = project.ID
+            if err := taskRepo.Save(ctx, task); err != nil {
+                return err
+            }
+        }
+
+        return nil
     })
 }
 ```
 
-## 🎯 HTTP Status Codes
+## Testing Strategy
+- **Unit Tests**: Mock repositories and external services
+- **Integration Tests**: Test with real databases
+- **Contract Tests**: Ensure DTOs match API contracts
 
-| Status Code | Kapan Digunakan |
-|------------|-----------------|
-| 200 OK | Success GET, PUT, PATCH |
-| 201 Created | Success POST (create new resource) |
-| 204 No Content | Success DELETE |
-| 400 Bad Request | Invalid input, validation error |
-| 401 Unauthorized | Missing/invalid token |
-| 403 Forbidden | Valid token, tapi tidak punya akses |
-| 404 Not Found | Resource tidak ditemukan |
-| 409 Conflict | Duplicate data (email exists) |
-| 500 Internal Server Error | Server error |
-
-## ⚠️ Best Practices
-- ✅ Gunakan `c.BodyParser()` untuk parse JSON body
-- ✅ Always validate input dengan validator
-- ✅ Return appropriate HTTP status codes
-- ✅ Hide sensitive data (password) dari response
-- ✅ Use consistent response format
-- ✅ Handle all possible errors
-- ✅ Return error untuk propagate ke error handler
-- ❌ Jangan expose internal error messages ke client
-
-## 🎓 Tips Fiber
-- `c.Params("id")` untuk URL parameters
-- `c.Query("key")` untuk query strings
-- `c.BodyParser(&struct)` untuk JSON body
-- `return c.Status(code).JSON(data)` untuk response
-- Return error akan di-handle oleh error handler middleware
+This layer ensures **clean separation** between your business logic and external concerns.
 EOF
 
-# ========================================
-# REPOSITORIES Directory Documentation
-# ========================================
-cat > repositories/README.md << 'EOF'
-# REPOSITORIES Directory
+# internal/infrastructure/ directory README
+cat > internal/infrastructure/README.md << 'EOF'
+# internal/infrastructure/ - Infrastructure Layer
 
-## 📖 Filosofi
-**"Abstract your data access layer"**. Repository pattern memisahkan business logic dari data access logic. Filosofinya adalah membuat abstraction layer antara aplikasi dan database, sehingga mudah untuk switch database atau mock data untuk testing.
+## Purpose
+Implements external dependencies and provides concrete implementations of domain interfaces. This layer handles **technical concerns** like databases, caching, external APIs, and file systems.
 
-## 🎯 Definisi
-Directory yang berisi kode untuk berinteraksi dengan database. Repositories bertanggung jawab untuk semua operasi CRUD (Create, Read, Update, Delete) dan query kompleks ke database.
-
-## 💡 Tanggung Jawab
-- CRUD operations (Create, Read, Update, Delete)
-- Database queries (SELECT, INSERT, UPDATE, DELETE)
-- Filtering, sorting, pagination
-- Transactions
-- Complex joins dan relations
-- Query optimization
-
-## 📝 Contoh Struktur
+## Structure
 ```
-repositories/
-├── user_repository.go       # User data access
-├── product_repository.go    # Product data access
-├── order_repository.go      # Order data access
-└── README.md                # Dokumentasi ini
+infrastructure/
+├── database/            # Database implementations
+│   ├── mysql/          # MySQL repository implementations
+│   └── migrations/     # Database schema migrations
+├── cache/              # Caching implementations
+│   ├── redis/         # Redis cache implementation
+│   └── interfaces/    # Cache interface definitions
+└── external/           # External service integrations
+    ├── email/         # Email service implementations
+    └── storage/       # File storage implementations
 ```
 
-## 🔧 Contoh Kode
+## Responsibilities
 
-### user_repository.go
+### 🗄️ database/
+- **Repository Implementations**: Concrete data access implementations
+- **Database Connections**: Connection pooling and management
+- **Query Optimization**: Database-specific optimizations
+- **Migrations**: Schema versioning and updates
+- **Transactions**: Database transaction handling
+
+### ⚡ cache/
+- **Cache Implementations**: Redis, in-memory, or other caching solutions
+- **Cache Strategies**: TTL, invalidation, warming strategies
+- **Serialization**: Data serialization for cache storage
+- **Cache Interfaces**: Abstract caching operations
+
+### 🌐 external/
+- **Third-party Integrations**: Email, SMS, payment gateways
+- **API Clients**: External REST/GraphQL API clients
+- **File Storage**: Cloud storage, local filesystem
+- **Message Queues**: Pub/sub, message brokers
+
+## Repository Implementation Pattern
+
 ```go
-package repositories
+// Domain interface (in domain/repositories/)
+type UserRepository interface {
+    Save(ctx context.Context, user *entities.User) error
+    FindByID(ctx context.Context, id int) (*entities.User, error)
+    FindByEmail(ctx context.Context, email string) (*entities.User, error)
+}
 
-import (
-    "context"
-    "myproject/models"
-    "gorm.io/gorm"
-)
-
-type UserRepository struct {
+// Infrastructure implementation
+type userRepository struct {
     db *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) *UserRepository {
-    return &UserRepository{db: db}
+func NewUserRepository(db *gorm.DB) repositories.UserRepository {
+    return &userRepository{db: db}
 }
 
-// Create - Insert new user
-func (r *UserRepository) Create(user *models.User) error {
-    return r.db.Create(user).Error
+func (r *userRepository) Save(ctx context.Context, user *entities.User) error {
+    return r.db.WithContext(ctx).Save(user).Error
 }
 
-// GetByID - Get user by ID
-func (r *UserRepository) GetByID(id string) (*models.User, error) {
-    var user models.User
-    err := r.db.First(&user, "id = ?", id).Error
+func (r *userRepository) FindByID(ctx context.Context, id int) (*entities.User, error) {
+    var user entities.User
+    err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", id).First(&user).Error
     if err != nil {
-        return nil, err
-    }
-    return &user, nil
-}
-
-// GetByEmail - Get user by email
-func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
-    var user models.User
-    err := r.db.Where("email = ?", email).First(&user).Error
-    if err != nil {
-        if err == gorm.ErrRecordNotFound {
-            return nil, nil // Return nil if not found
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, domain.ErrUserNotFound
         }
         return nil, err
     }
     return &user, nil
 }
-
-// GetAll - Get all users with filters
-func (r *UserRepository) GetAll(filter map[string]interface{}) ([]models.User, error) {
-    var users []models.User
-    query := r.db
-
-    // Apply filters dynamically
-    if role, ok := filter["role"].(string); ok && role != "" {
-        query = query.Where("role = ?", role)
-    }
-
-    if isActive, ok := filter["is_active"].(bool); ok {
-        query = query.Where("is_active = ?", isActive)
-    }
-
-    err := query.Find(&users).Error
-    return users, err
-}
-
-// GetWithPagination - Get users with pagination
-func (r *UserRepository) GetWithPagination(page, pageSize int) ([]models.User, int64, error) {
-    var users []models.User
-    var total int64
-
-    // Count total
-    r.db.Model(&models.User{}).Count(&total)
-
-    // Get paginated data
-    offset := (page - 1) * pageSize
-    err := r.db.Offset(offset).Limit(pageSize).Find(&users).Error
-
-    return users, total, err
-}
-
-// Update - Update user
-func (r *UserRepository) Update(user *models.User) error {
-    return r.db.Save(user).Error
-}
-
-// Delete - Delete user
-func (r *UserRepository) Delete(id string) error {
-    return r.db.Delete(&models.User{}, "id = ?", id).Error
-}
-
-// Search - Full text search
-func (r *UserRepository) Search(keyword string) ([]models.User, error) {
-    var users []models.User
-    searchPattern := "%" + keyword + "%"
-    err := r.db.Where("name ILIKE ? OR email ILIKE ?", searchPattern, searchPattern).Find(&users).Error
-    return users, err
-}
 ```
 
-## ⚠️ Best Practices
-- ✅ Always use context for cancellation
-- ✅ Use transactions untuk operasi yang saling terkait
-- ✅ Handle `gorm.ErrRecordNotFound` explicitly
-- ✅ Use prepared statements (avoid SQL injection)
-- ✅ Index kolom yang sering di-query
-- ✅ Use pagination untuk large datasets
-- ❌ Jangan expose repository errors langsung ke client
-- ❌ Jangan query di loop (N+1 problem) - use Preload
-- ❌ Jangan fetch all data tanpa limit
-EOF
+## Cache Implementation Pattern
 
-# ========================================
-# MIDDLEWARES Directory Documentation
-# ========================================
-cat > middlewares/README.md << 'EOF'
-# MIDDLEWARES Directory
-
-## 📖 Filosofi
-**"Middleware is the gatekeeper of your application"**. Filosofinya adalah memproses requests sebelum sampai ke handler dan responses sebelum dikirim ke client. Middleware memungkinkan separation of concerns untuk cross-cutting concerns seperti authentication, logging, CORS, dll.
-
-## 🎯 Definisi
-Directory yang berisi middleware functions yang dieksekusi sebelum atau sesudah handler. Middleware adalah fungsi yang memiliki akses ke context dan next function dalam request-response cycle.
-
-## 💡 Tanggung Jawab
-- Authentication & Authorization
-- Request logging
-- CORS handling
-- Rate limiting
-- Request validation
-- Error handling
-- Response compression
-- Security headers
-
-## 📝 Contoh Struktur
-```
-middlewares/
-├── auth.go           # Authentication middleware
-├── logger.go         # Request logging
-├── cors.go           # CORS configuration
-├── rate_limiter.go   # Rate limiting
-└── README.md         # Dokumentasi ini
-```
-
-## 🔧 Contoh Kode
-
-### auth.go
 ```go
-package middlewares
-
-import (
-    "strings"
-    "myproject/utils"
-    "github.com/gofiber/fiber/v2"
-)
-
-// AuthMiddleware - Verify JWT token
-func AuthMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
-        // 1. Get token from header
-        authHeader := c.Get("Authorization")
-        if authHeader == "" {
-            return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-                "status":  "error",
-                "message": "Authorization header required",
-            })
-        }
-
-        // 2. Extract token (format: "Bearer <token>")
-        parts := strings.Split(authHeader, " ")
-        if len(parts) != 2 || parts[0] != "Bearer" {
-            return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-                "status":  "error",
-                "message": "Invalid authorization format",
-            })
-        }
-
-        token := parts[1]
-
-        // 3. Validate token
-        claims, err := utils.ValidateJWT(token)
-        if err != nil {
-            return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-                "status":  "error",
-                "message": "Invalid or expired token",
-            })
-        }
-
-        // 4. Set user info in context (locals)
-        c.Locals("user_id", claims.UserID)
-        c.Locals("email", claims.Email)
-        c.Locals("role", claims.Role)
-
-        // 5. Continue to next handler
-        return c.Next()
-    }
+// Cache interface
+type CacheInterface interface {
+    Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
+    Get(ctx context.Context, key string, dest interface{}) error
+    Delete(ctx context.Context, key string) error
 }
 
-// AdminOnly - Check if user is admin
-func AdminOnly() fiber.Handler {
-    return func(c *fiber.Ctx) error {
-        role := c.Locals("role")
-        if role == nil {
-            return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-                "status":  "error",
-                "message": "Unauthorized",
-            })
-        }
-
-        if role != "admin" {
-            return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-                "status":  "error",
-                "message": "Admin access required",
-            })
-        }
-
-        return c.Next()
-    }
+// Redis implementation
+type redisCache struct {
+    client *redis.Client
 }
 
-// OptionalAuth - Auth optional, tidak block request
-func OptionalAuth() fiber.Handler {
-    return func(c *fiber.Ctx) error {
-        authHeader := c.Get("Authorization")
-        if authHeader != "" {
-            parts := strings.Split(authHeader, " ")
-            if len(parts) == 2 && parts[0] == "Bearer" {
-                claims, err := utils.ValidateJWT(parts[1])
-                if err == nil {
-                    c.Locals("user_id", claims.UserID)
-                    c.Locals("email", claims.Email)
-                    c.Locals("role", claims.Role)
-                }
-            }
-        }
-        return c.Next()
-    }
-}
-```
-
-### logger.go
-```go
-package middlewares
-
-import (
-    "fmt"
-    "time"
-    "github.com/gofiber/fiber/v2"
-)
-
-// CustomLogger - Custom request logger
-func CustomLogger() fiber.Handler {
-    return func(c *fiber.Ctx) error {
-        start := time.Now()
-
-        // Process request
-        err := c.Next()
-
-        // Calculate duration
-        duration := time.Since(start)
-
-        // Log details
-        fmt.Printf(
-            "[%s] %s %s | Status: %d | Duration: %v | IP: %s\n",
-            c.Method(),
-            c.Path(),
-            c.Protocol(),
-            c.Response().StatusCode(),
-            duration,
-            c.IP(),
-        )
-
+func (c *redisCache) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+    data, err := json.Marshal(value)
+    if err != nil {
         return err
     }
+    return c.client.Set(ctx, key, data, ttl).Err()
 }
 ```
 
-### cors.go
+## Database Migrations
+
+### Migration File Structure
+```sql
+-- 001_create_users_table.sql
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
+
+    INDEX idx_users_email (email),
+    INDEX idx_users_deleted_at (deleted_at)
+);
+```
+
+### Migration Management
 ```go
-package middlewares
-
-import (
-    "github.com/gofiber/fiber/v2"
-    "github.com/gofiber/fiber/v2/middleware/cors"
-)
-
-// CORS - Enable CORS with default config
-func CORS() fiber.Handler {
-    return cors.New(cors.Config{
-        AllowOrigins: "*",
-        AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-        AllowMethods: "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-    })
+type Migrator struct {
+    db *sql.DB
 }
 
-// CORSWithConfig - Configurable CORS
-func CORSWithConfig(allowedOrigins []string) fiber.Handler {
-    return cors.New(cors.Config{
-        AllowOrigins: strings.Join(allowedOrigins, ","),
-        AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-        AllowMethods: "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-        AllowCredentials: true,
-    })
+func (m *Migrator) RunMigrations() error {
+    migrations := []string{
+        "001_create_users_table.sql",
+        "002_create_projects_table.sql",
+        // ... more migrations
+    }
+
+    for _, migration := range migrations {
+        if err := m.runMigration(migration); err != nil {
+            return fmt.Errorf("failed to run migration %s: %w", migration, err)
+        }
+    }
+    return nil
 }
 ```
 
-### rate_limiter.go
+## External Service Integration
+
 ```go
-package middlewares
+// Email service interface (in domain/)
+type EmailService interface {
+    SendWelcomeEmail(email string) error
+    SendPasswordReset(email, token string) error
+}
 
-import (
-    "time"
-    "github.com/gofiber/fiber/v2"
-    "github.com/gofiber/fiber/v2/middleware/limiter"
-)
+// SMTP implementation (in infrastructure/)
+type smtpEmailService struct {
+    host     string
+    port     int
+    username string
+    password string
+}
 
-// RateLimit - Limit requests per IP
-func RateLimit(max int, expiration time.Duration) fiber.Handler {
-    return limiter.New(limiter.Config{
-        Max:        max,
-        Expiration: expiration,
-        KeyGenerator: func(c *fiber.Ctx) string {
-            return c.IP()
+func (s *smtpEmailService) SendWelcomeEmail(email string) error {
+    // SMTP implementation details
+    msg := s.buildWelcomeMessage(email)
+    return s.sendMail(email, msg)
+}
+```
+
+## Design Principles
+
+### ✅ Good Practices
+- Implement domain interfaces
+- Handle infrastructure-specific errors
+- Use connection pooling
+- Implement proper logging
+- Handle retries and timeouts
+- Use transactions where appropriate
+
+### ❌ Avoid
+- Business logic in repositories
+- Exposing infrastructure details to domain
+- Hard-coded configurations
+- Ignoring errors
+- Not handling connection failures
+
+## Configuration Management
+
+```go
+type DatabaseConfig struct {
+    Host            string `yaml:"host"`
+    Port            int    `yaml:"port"`
+    Username        string `yaml:"username"`
+    Password        string `yaml:"password"`
+    Database        string `yaml:"database"`
+    MaxIdleConns    int    `yaml:"max_idle_conns"`
+    MaxOpenConns    int    `yaml:"max_open_conns"`
+    ConnMaxLifetime int    `yaml:"conn_max_lifetime"`
+}
+
+func InitDatabase(cfg *DatabaseConfig) (*gorm.DB, error) {
+    dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+        cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
+
+    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+    if err != nil {
+        return nil, err
+    }
+
+    sqlDB, _ := db.DB()
+    sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
+    sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
+    sqlDB.SetConnMaxLifetime(time.Duration(cfg.ConnMaxLifetime) * time.Minute)
+
+    return db, nil
+}
+```
+
+## Testing Infrastructure
+
+```go
+// Use test containers for integration tests
+func setupTestDB(t *testing.T) *gorm.DB {
+    container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+        ContainerRequest: testcontainers.ContainerRequest{
+            Image:        "mysql:8.0",
+            ExposedPorts: []string{"3306/tcp"},
+            Env: map[string]string{
+                "MYSQL_ROOT_PASSWORD": "password",
+                "MYSQL_DATABASE":      "testdb",
+            },
         },
-        LimitReached: func(c *fiber.Ctx) error {
-            return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-                "status":  "error",
-                "message": "Rate limit exceeded. Please try again later.",
-            })
-        },
+        Started: true,
     })
+    require.NoError(t, err)
+
+    // Get connection details and create DB connection
+    // Return configured test database
 }
-
-// Example usage: RateLimit(100, time.Minute) // 100 requests per minute
 ```
 
-## 🎯 Middleware Execution Order
-```go
-app := fiber.New()
-
-// Global middlewares (executed for all routes)
-app.Use(recover.New())
-app.Use(CustomLogger())
-app.Use(CORS())
-
-// Route-specific middleware
-api := app.Group("/api/v1")
-
-// Public routes
-api.Post("/login", authHandler.Login)
-api.Post("/register", authHandler.Register)
-
-// Protected routes (with auth middleware)
-protected := api.Group("/users", AuthMiddleware())
-protected.Get("/", userHandler.GetAll)
-protected.Get("/:id", userHandler.GetByID)
-
-// Admin only routes
-admin := api.Group("/admin", AuthMiddleware(), AdminOnly())
-admin.Get("/users", userHandler.GetAll)
-admin.Delete("/users/:id", userHandler.Delete)
-```
-
-## ⚠️ Best Practices
-- ✅ Order matters - place auth before authorization
-- ✅ Always call `c.Next()` to continue chain
-- ✅ Use `c.Locals()` to pass data between middlewares
-- ✅ Keep middleware focused on single responsibility
-- ✅ Use Fiber's built-in middlewares when available
-- ✅ Return error to stop execution
-- ❌ Don't put business logic in middleware
-
-## 🎓 Tips Fiber
-- `c.Locals("key", value)` untuk set data
-- `c.Locals("key")` untuk get data
-- `return c.Next()` untuk continue
-- Return error untuk stop execution
-- Fiber punya banyak built-in middleware (logger, cors, limiter, compress, dll)
+This layer provides **reliable, performant** implementations of your domain contracts while keeping technical details isolated from business logic.
 EOF
 
-# ========================================
-# UTILS Directory Documentation
-# ========================================
-cat > utils/README.md << 'EOF'
-# UTILS Directory
+# internal/interfaces/ directory README
+cat > internal/interfaces/README.md << 'EOF'
+# internal/interfaces/ - External Interface Layer
 
-## 📖 Filosofi
-**"DRY - Don't Repeat Yourself"**. Filosofi utils adalah menyimpan fungsi-fungsi helper yang reusable di satu tempat, sehingga tidak perlu menulis kode yang sama berulang kali di berbagai tempat.
+## Purpose
+Handles external communication and adapts between external protocols and internal application logic. This layer **translates** between the outside world and your application.
 
-## 🎯 Definisi
-Directory yang berisi utility functions dan helper functions yang bisa digunakan di berbagai bagian aplikasi. Functions di sini bersifat generic dan tidak terikat pada business logic tertentu.
-
-## 💡 Tanggung Jawab
-- Response formatting
-- JWT token generation & validation
-- Password hashing & verification
-- Data validation
-- String manipulation
-- Date/time utilities
-- File operations
-- Random generators
-
-## 📝 Contoh Struktur
+## Structure
 ```
-utils/
-├── response.go       # HTTP response helpers
-├── jwt.go            # JWT token utilities
-├── validator.go      # Custom validators
-├── password.go       # Password utilities
-└── README.md         # Dokumentasi ini
+interfaces/
+├── http/                    # HTTP REST API
+│   ├── handlers/           # HTTP request handlers
+│   ├── middleware/         # HTTP middleware (auth, cors, etc.)
+│   ├── routes/            # Route definitions
+│   └── responses/         # Response formatting helpers
+└── grpc/                   # gRPC API (optional)
+    ├── handlers/          # gRPC service implementations
+    └── protos/           # Protocol buffer definitions
 ```
 
-## 🔧 Contoh Kode
+## Responsibilities
 
-### response.go
+### 🌐 http/
+- **Request Handling**: Process HTTP requests
+- **Response Formatting**: Format and return HTTP responses
+- **Input Validation**: Validate incoming HTTP data
+- **Authentication**: Handle auth tokens and sessions
+- **Route Management**: Define API endpoints
+- **Middleware**: Cross-cutting concerns (logging, CORS, rate limiting)
+
+### ⚡ grpc/
+- **Service Implementation**: Implement gRPC services
+- **Protocol Buffers**: Define message contracts
+- **Streaming**: Handle streaming RPCs
+- **Error Handling**: gRPC-specific error responses
+
+## HTTP Handler Pattern
+
 ```go
-package utils
+type UserHandler struct {
+    userService services.UserService
+    validator   *validator.Validator
+}
 
-import "github.com/gofiber/fiber/v2"
+func NewUserHandler(userService services.UserService, validator *validator.Validator) *UserHandler {
+    return &UserHandler{
+        userService: userService,
+        validator:   validator,
+    }
+}
 
+func (h *UserHandler) CreateUser(c *gin.Context) {
+    // 1. Bind request to DTO
+    var req dto.CreateUserRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        responses.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+        return
+    }
+
+    // 2. Validate input
+    if err := h.validator.Validate(&req); err != nil {
+        responses.ValidationErrorResponse(c, err)
+        return
+    }
+
+    // 3. Call application service
+    user, err := h.userService.CreateUser(c.Request.Context(), &req)
+    if err != nil {
+        responses.HandleServiceError(c, err)
+        return
+    }
+
+    // 4. Format response
+    responses.SuccessResponse(c, http.StatusCreated, "User created successfully", user)
+}
+```
+
+## Middleware Pattern
+
+### Authentication Middleware
+```go
+func AuthMiddleware(jwtUtil jwt.JWTUtil) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        authHeader := c.GetHeader("Authorization")
+        if authHeader == "" {
+            responses.ErrorResponse(c, http.StatusUnauthorized, "Missing authorization header", nil)
+            c.Abort()
+            return
+        }
+
+        token := strings.TrimPrefix(authHeader, "Bearer ")
+        claims, err := jwtUtil.ValidateToken(token)
+        if err != nil {
+            responses.ErrorResponse(c, http.StatusUnauthorized, "Invalid token", nil)
+            c.Abort()
+            return
+        }
+
+        // Set user context
+        c.Set("user_id", claims.UserID)
+        c.Set("user_role", claims.Role)
+        c.Next()
+    }
+}
+```
+
+### Logging Middleware
+```go
+func LoggingMiddleware(logger logger.Logger) gin.HandlerFunc {
+    return gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+        logger.Info("HTTP Request", map[string]interface{}{
+            "method":      param.Method,
+            "path":        param.Path,
+            "status_code": param.StatusCode,
+            "latency":     param.Latency,
+            "client_ip":   param.ClientIP,
+            "user_agent":  param.Request.UserAgent(),
+        })
+        return ""
+    })
+}
+```
+
+## Response Helper Pattern
+
+```go
 type Response struct {
-    Status  string      `json:"status"`
+    Success bool        `json:"success"`
     Message string      `json:"message"`
     Data    interface{} `json:"data,omitempty"`
+    Error   interface{} `json:"error,omitempty"`
+    Meta    interface{} `json:"meta,omitempty"`
 }
 
-type ErrorDetail struct {
-    Field   string `json:"field"`
-    Message string `json:"message"`
-}
-
-// SuccessResponse - Standard success response
-func SuccessResponse(c *fiber.Ctx, code int, message string, data interface{}) error {
-    return c.Status(code).JSON(Response{
-        Status:  "success",
+func SuccessResponse(c *gin.Context, statusCode int, message string, data interface{}) {
+    c.JSON(statusCode, Response{
+        Success: true,
         Message: message,
         Data:    data,
     })
 }
 
-// ErrorResponse - Standard error response
-func ErrorResponse(c *fiber.Ctx, code int, message string) error {
-    return c.Status(code).JSON(Response{
-        Status:  "error",
+func ErrorResponse(c *gin.Context, statusCode int, message string, err interface{}) {
+    c.JSON(statusCode, Response{
+        Success: false,
         Message: message,
+        Error:   err,
     })
 }
 
-// ValidationErrorResponse - For validation errors
-func ValidationErrorResponse(c *fiber.Ctx, errors interface{}) error {
-    return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-        "status":  "error",
-        "message": "Validation failed",
-        "errors":  errors,
-    })
-}
-
-// PaginatedResponse - For paginated data
-func PaginatedResponse(c *fiber.Ctx, data interface{}, page, pageSize int, total int64) error {
-    totalPages := int(total) / pageSize
-    if int(total)%pageSize != 0 {
-        totalPages++
+// Handle service layer errors
+func HandleServiceError(c *gin.Context, err error) {
+    switch {
+    case errors.Is(err, domain.ErrUserNotFound):
+        ErrorResponse(c, http.StatusNotFound, "User not found", nil)
+    case errors.Is(err, domain.ErrEmailAlreadyExists):
+        ErrorResponse(c, http.StatusConflict, "Email already exists", nil)
+    case errors.Is(err, domain.ErrUnauthorized):
+        ErrorResponse(c, http.StatusUnauthorized, "Unauthorized", nil)
+    default:
+        ErrorResponse(c, http.StatusInternalServerError, "Internal server error", nil)
     }
-
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "status":  "success",
-        "message": "Data fetched successfully",
-        "data":    data,
-        "pagination": fiber.Map{
-            "page":        page,
-            "page_size":   pageSize,
-            "total_items": total,
-            "total_pages": totalPages,
-        },
-    })
 }
 ```
 
-### jwt.go
+## Route Organization
+
 ```go
-package utils
+func SetupRoutes(
+    router *gin.Engine,
+    userHandler *handlers.UserHandler,
+    projectHandler *handlers.ProjectHandler,
+    authMiddleware gin.HandlerFunc,
+) {
+    api := router.Group("/api/v1")
 
-import (
-    "errors"
-    "time"
-    "github.com/golang-jwt/jwt/v5"
-)
-
-var jwtSecret = []byte("your-secret-key") // Ambil dari config
-
-type Claims struct {
-    UserID string `json:"user_id"`
-    Email  string `json:"email"`
-    Role   string `json:"role"`
-    jwt.RegisteredClaims
-}
-
-// GenerateJWT - Create new JWT token
-func GenerateJWT(userID, email, role string) (string, error) {
-    claims := Claims{
-        UserID: userID,
-        Email:  email,
-        Role:   role,
-        RegisteredClaims: jwt.RegisteredClaims{
-            ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // 24 jam
-            IssuedAt:  jwt.NewNumericDate(time.Now()),
-            NotBefore: jwt.NewNumericDate(time.Now()),
-        },
+    // Public routes
+    auth := api.Group("/auth")
+    {
+        auth.POST("/login", userHandler.Login)
+        auth.POST("/register", userHandler.Register)
+        auth.POST("/refresh", userHandler.RefreshToken)
     }
 
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    return token.SignedString(jwtSecret)
-}
+    // Protected routes
+    protected := api.Group("/")
+    protected.Use(authMiddleware)
+    {
+        // User routes
+        users := protected.Group("/users")
+        {
+            users.GET("/profile", userHandler.GetProfile)
+            users.PUT("/profile", userHandler.UpdateProfile)
+        }
 
-// ValidateJWT - Validate and parse JWT token
-func ValidateJWT(tokenString string) (*Claims, error) {
-    token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-        return jwtSecret, nil
-    })
-
-    if err != nil {
-        return nil, err
-    }
-
-    if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-        return claims, nil
-    }
-
-    return nil, errors.New("invalid token")
-}
-```
-
-### validator.go
-```go
-package utils
-
-import (
-    "github.com/go-playground/validator/v10"
-)
-
-var validate = validator.New()
-
-// ValidateStruct - Validate struct using tags
-func ValidateStruct(s interface{}) error {
-    return validate.Struct(s)
-}
-
-// GetValidationErrors - Format validation errors
-func GetValidationErrors(err error) []ErrorDetail {
-    var errors []ErrorDetail
-
-    if validationErrors, ok := err.(validator.ValidationErrors); ok {
-        for _, e := range validationErrors {
-            errors = append(errors, ErrorDetail{
-                Field:   e.Field(),
-                Message: getErrorMessage(e),
-            })
+        // Project routes
+        projects := protected.Group("/projects")
+        {
+            projects.GET("/", projectHandler.ListProjects)
+            projects.POST("/", projectHandler.CreateProject)
+            projects.GET("/:id", projectHandler.GetProject)
+            projects.PUT("/:id", projectHandler.UpdateProject)
+            projects.DELETE("/:id", projectHandler.DeleteProject)
         }
     }
-
-    return errors
-}
-
-func getErrorMessage(e validator.FieldError) string {
-    switch e.Tag() {
-    case "required":
-        return e.Field() + " is required"
-    case "email":
-        return e.Field() + " must be a valid email"
-    case "min":
-        return e.Field() + " must be at least " + e.Param() + " characters"
-    case "max":
-        return e.Field() + " must be at most " + e.Param() + " characters"
-    default:
-        return e.Field() + " is invalid"
-    }
 }
 ```
 
-### password.go
+## Input Validation
+
 ```go
-package utils
+type CreateProjectRequest struct {
+    Name        string  `json:"name" validate:"required,min=3,max=100"`
+    Description string  `json:"description" validate:"max=500"`
+    Budget      float64 `json:"budget" validate:"min=0"`
+    CategoryID  int     `json:"category_id" validate:"required"`
+}
+
+func (h *ProjectHandler) CreateProject(c *gin.Context) {
+    var req dto.CreateProjectRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        responses.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON", err)
+        return
+    }
+
+    if err := h.validator.Validate(&req); err != nil {
+        responses.ValidationErrorResponse(c, err)
+        return
+    }
+
+    // Process request...
+}
+```
+
+## Error Handling Best Practices
+
+### ✅ Good Error Handling
+```go
+func (h *UserHandler) GetUser(c *gin.Context) {
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        responses.ErrorResponse(c, http.StatusBadRequest, "Invalid user ID", nil)
+        return
+    }
+
+    user, err := h.userService.GetUserByID(c.Request.Context(), id)
+    if err != nil {
+        // Let helper handle service errors
+        responses.HandleServiceError(c, err)
+        return
+    }
+
+    responses.SuccessResponse(c, http.StatusOK, "User retrieved", user)
+}
+```
+
+### ❌ Bad Error Handling
+```go
+func (h *UserHandler) GetUser(c *gin.Context) {
+    id, _ := strconv.Atoi(c.Param("id")) // ❌ Ignoring error
+
+    user, err := h.userService.GetUserByID(c.Request.Context(), id)
+    if err != nil {
+        c.JSON(500, "Error") // ❌ Not handling different error types
+        return
+    }
+
+    c.JSON(200, user) // ❌ Exposing internal structure
+}
+```
+
+## Security Considerations
+
+- **Input Validation**: Validate all incoming data
+- **Authentication**: Verify user identity
+- **Authorization**: Check user permissions
+- **Rate Limiting**: Prevent abuse
+- **CORS**: Configure cross-origin requests
+- **Request Size Limits**: Prevent large payloads
+- **Timeout Handling**: Prevent hanging requests
+
+## Testing Handlers
+
+```go
+func TestCreateUser(t *testing.T) {
+    // Setup
+    mockService := mocks.NewUserService()
+    handler := handlers.NewUserHandler(mockService, validator.New())
+    router := gin.New()
+    router.POST("/users", handler.CreateUser)
+
+    // Test case
+    reqBody := `{"username":"john","email":"john@example.com","password":"password123"}`
+    req := httptest.NewRequest("POST", "/users", strings.NewReader(reqBody))
+    req.Header.Set("Content-Type", "application/json")
+    w := httptest.NewRecorder()
+
+    // Execute
+    router.ServeHTTP(w, req)
+
+    // Assert
+    assert.Equal(t, http.StatusCreated, w.Code)
+    mockService.AssertExpectations(t)
+}
+```
+
+This layer ensures your application has **clean, secure, well-documented APIs** that properly handle all edge cases and provide excellent developer experience.
+EOF
+
+# internal/utils/ directory README
+cat > internal/utils/README.md << 'EOF'
+# internal/utils/ - Utility Functions & Helpers
+
+## Purpose
+Contains reusable utility functions, helpers, and cross-cutting concerns that are used across multiple layers of the application.
+
+## Structure
+```
+utils/
+├── validator/             # Input validation utilities
+├── jwt/                  # JWT token handling
+├── password/             # Password hashing utilities
+├── database/             # Database helper functions
+└── helpers/              # General purpose helpers
+```
+
+## Responsibilities
+
+### ✅ validator/
+- **Input Validation**: Custom validation rules and functions
+- **Data Sanitization**: Clean and normalize input data
+- **Validation Messages**: Custom error messages
+- **Struct Validation**: Validate struct fields using tags
+
+### 🔐 jwt/
+- **Token Generation**: Create JWT tokens
+- **Token Validation**: Verify and parse JWT tokens
+- **Claims Management**: Handle custom token claims
+- **Token Refresh**: Refresh token logic
+
+### 🔒 password/
+- **Password Hashing**: Secure password hashing (bcrypt)
+- **Password Verification**: Verify passwords against hashes
+- **Password Strength**: Check password complexity
+- **Salt Generation**: Generate secure salts
+
+### 🗄️ database/
+- **Pagination**: Database pagination helpers
+- **Transaction Management**: Transaction utilities
+- **Query Builders**: Dynamic query construction
+- **Connection Helpers**: Database connection utilities
+
+### 🛠️ helpers/
+- **String Utilities**: String manipulation functions
+- **Time Utilities**: Date/time formatting and parsing
+- **File Utilities**: File handling and manipulation
+- **Conversion Helpers**: Data type conversions
+
+## Implementation Examples
+
+### Password Utility
+```go
+package password
 
 import (
     "golang.org/x/crypto/bcrypt"
 )
 
-// HashPassword - Hash password using bcrypt
-func HashPassword(password string) (string, error) {
-    bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+type PasswordUtil interface {
+    HashPassword(password string) (string, error)
+    VerifyPassword(password, hash string) error
+    GenerateRandomPassword(length int) string
+}
+
+type bcryptUtil struct {
+    cost int
+}
+
+func NewBcryptUtil() PasswordUtil {
+    return &bcryptUtil{cost: bcrypt.DefaultCost}
+}
+
+func (b *bcryptUtil) HashPassword(password string) (string, error) {
+    bytes, err := bcrypt.GenerateFromPassword([]byte(password), b.cost)
     return string(bytes), err
 }
 
-// CheckPassword - Verify password against hash
-func CheckPassword(password, hash string) bool {
-    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-    return err == nil
+func (b *bcryptUtil) VerifyPassword(password, hash string) error {
+    return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }
 ```
 
-## ⚠️ Best Practices
-- ✅ Keep utils functions pure (no side effects)
-- ✅ Make functions reusable and generic
-- ✅ Add error handling
-- ✅ Document functions with comments
-- ✅ Use descriptive function names
-- ❌ Don't put business logic in utils
-- ❌ Don't access database in utils
-EOF
-
-# ========================================
-# ROUTES Directory Documentation
-# ========================================
-cat > routes/README.md << 'EOF'
-# ROUTES Directory
-
-## 📖 Filosofi
-**"Routes are the map of your API"**. Filosofi routes adalah mendefinisikan semua endpoint API di satu tempat yang terorganisir, sehingga mudah untuk melihat struktur API secara keseluruhan dan mengelola versioning.
-
-## 🎯 Definisi
-Directory yang berisi definisi semua HTTP routes/endpoints aplikasi. Routes menghubungkan URL paths dengan handler functions dan middlewares.
-
-## 💡 Tanggung Jawab
-- Define URL paths and HTTP methods
-- Map routes to handlers
-- Apply middlewares to routes
-- Group related routes
-- API versioning
-- Route documentation
-
-## 📝 Contoh Struktur
-```
-routes/
-├── routes.go         # Main routes setup
-└── README.md         # Dokumentasi ini
-```
-
-## 🔧 Contoh Kode
-
-### routes.go
+### JWT Utility
 ```go
-package routes
+package jwt
 
 import (
-    "myproject/handlers"
-    "myproject/middlewares"
-    "github.com/gofiber/fiber/v2"
+    "time"
+    "github.com/golang-jwt/jwt/v5"
 )
 
-func SetupRoutes(
-    app *fiber.App,
-    userHandler *handlers.UserHandler,
-    productHandler *handlers.ProductHandler,
-    authHandler *handlers.AuthHandler,
-) {
-    // Health check
-    app.Get("/health", func(c *fiber.Ctx) error {
-        return c.JSON(fiber.Map{
-            "status":  "ok",
-            "message": "Server is running",
-        })
-    })
+type JWTUtil interface {
+    GenerateToken(userID int, username, role string) (string, error)
+    ValidateToken(tokenString string) (*Claims, error)
+    RefreshToken(tokenString string) (string, error)
+}
 
-    // API v1 routes
-    v1 := app.Group("/api/v1")
+type Claims struct {
+    UserID   int    `json:"user_id"`
+    Username string `json:"username"`
+    Role     string `json:"role"`
+    jwt.RegisteredClaims
+}
 
-    // Public routes
-    auth := v1.Group("/auth")
-    auth.Post("/register", authHandler.Register)
-    auth.Post("/login", authHandler.Login)
-    auth.Post("/forgot-password", authHandler.ForgotPassword)
-    auth.Post("/reset-password", authHandler.ResetPassword)
+type jwtUtil struct {
+    secret     []byte
+    expiration time.Duration
+}
 
-    // Protected routes
-    protected := v1.Group("", middlewares.AuthMiddleware())
+func NewJWTUtil(secret string, expirationHours int) JWTUtil {
+    return &jwtUtil{
+        secret:     []byte(secret),
+        expiration: time.Duration(expirationHours) * time.Hour,
+    }
+}
 
-    // User routes
-    users := protected.Group("/users")
-    users.Get("/", userHandler.GetAll)           // GET /api/v1/users
-    users.Get("/:id", userHandler.GetByID)       // GET /api/v1/users/:id
-    users.Put("/:id", userHandler.Update)        // PUT /api/v1/users/:id
-    users.Delete("/:id", userHandler.Delete)     // DELETE /api/v1/users/:id
+func (j *jwtUtil) GenerateToken(userID int, username, role string) (string, error) {
+    claims := &Claims{
+        UserID:   userID,
+        Username: username,
+        Role:     role,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.expiration)),
+            IssuedAt:  jwt.NewNumericDate(time.Now()),
+        },
+    }
 
-    // Product routes
-    products := protected.Group("/products")
-    products.Get("/", productHandler.GetAll)
-    products.Get("/:id", productHandler.GetByID)
-    products.Post("/", productHandler.Create)
-    products.Put("/:id", productHandler.Update)
-    products.Delete("/:id", productHandler.Delete)
-
-    // Profile routes
-    profile := protected.Group("/profile")
-    profile.Get("/", userHandler.GetProfile)
-    profile.Put("/", userHandler.UpdateProfile)
-    profile.Put("/password", userHandler.ChangePassword)
-
-    // Admin only routes
-    admin := v1.Group("/admin", middlewares.AuthMiddleware(), middlewares.AdminOnly())
-    admin.Get("/users", userHandler.GetAll)
-    admin.Delete("/users/:id", userHandler.Delete)
-    admin.Get("/analytics", userHandler.GetAnalytics)
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString(j.secret)
 }
 ```
 
-## 🎯 Route Patterns & Best Practices
+### Validator Utility
+```go
+package validator
 
-### RESTful Conventions
+import (
+    "github.com/go-playground/validator/v10"
+)
+
+type Validator struct {
+    validate *validator.Validate
+}
+
+func NewValidator() *Validator {
+    v := validator.New()
+
+    // Register custom validators
+    v.RegisterValidation("password_strength", validatePasswordStrength)
+
+    return &Validator{validate: v}
+}
+
+func (v *Validator) Validate(s interface{}) error {
+    return v.validate.Struct(s)
+}
+
+func validatePasswordStrength(fl validator.FieldLevel) bool {
+    password := fl.Field().String()
+
+    // Check minimum length
+    if len(password) < 8 {
+        return false
+    }
+
+    // Check for at least one uppercase, lowercase, and digit
+    hasUpper := false
+    hasLower := false
+    hasDigit := false
+
+    for _, char := range password {
+        switch {
+        case 'A' <= char && char <= 'Z':
+            hasUpper = true
+        case 'a' <= char && char <= 'z':
+            hasLower = true
+        case '0' <= char && char <= '9':
+            hasDigit = true
+        }
+    }
+
+    return hasUpper && hasLower && hasDigit
+}
 ```
-GET    /api/v1/users          → Get all users
-GET    /api/v1/users/:id      → Get single user
-POST   /api/v1/users          → Create user
-PUT    /api/v1/users/:id      → Update user (full)
-PATCH  /api/v1/users/:id      → Update user (partial)
-DELETE /api/v1/users/:id      → Delete user
+
+### Database Pagination Helper
+```go
+package database
+
+import (
+    "gorm.io/gorm"
+)
+
+type PaginationParams struct {
+    Page  int `json:"page" validate:"min=1"`
+    Limit int `json:"limit" validate:"min=1,max=100"`
+}
+
+type PaginationResult struct {
+    CurrentPage int   `json:"current_page"`
+    LastPage    int   `json:"last_page"`
+    PerPage     int   `json:"per_page"`
+    Total       int64 `json:"total"`
+}
+
+func Paginate(db *gorm.DB, params PaginationParams) (*gorm.DB, *PaginationResult) {
+    var total int64
+    db.Count(&total)
+
+    offset := (params.Page - 1) * params.Limit
+    lastPage := int((total + int64(params.Limit) - 1) / int64(params.Limit))
+
+    result := &PaginationResult{
+        CurrentPage: params.Page,
+        LastPage:    lastPage,
+        PerPage:     params.Limit,
+        Total:       total,
+    }
+
+    return db.Offset(offset).Limit(params.Limit), result
+}
 ```
 
-## ⚠️ Best Practices
-- ✅ Use RESTful conventions when possible
-- ✅ Version your API (/api/v1, /api/v2)
-- ✅ Group related routes
-- ✅ Use meaningful URL paths
-- ✅ Apply middlewares efficiently
-- ✅ Document your routes
-- ❌ Don't use verbs in URLs
-- ❌ Don't nest too deep
+### String Helper
+```go
+package helpers
 
-## 🎓 Tips Fiber
-- `app.Get()`, `app.Post()`, `app.Put()`, `app.Delete()` untuk HTTP methods
-- `app.Group()` untuk group routes
-- Middleware applied dengan chaining
-- Fiber lebih cepat dan memory efficient
+import (
+    "math/rand"
+    "strings"
+    "time"
+)
+
+func ToCamelCase(s string) string {
+    words := strings.Fields(s)
+    for i := 1; i < len(words); i++ {
+        words[i] = strings.Title(words[i])
+    }
+    return strings.Join(words, "")
+}
+
+func ToSnakeCase(s string) string {
+    var result strings.Builder
+    for i, char := range s {
+        if i > 0 && char >= 'A' && char <= 'Z' {
+            result.WriteRune('_')
+        }
+        result.WriteRune(char)
+    }
+    return strings.ToLower(result.String())
+}
+
+func GenerateRandomString(length int) string {
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+    rand.Seed(time.Now().UnixNano())
+    b := make([]byte, length)
+    for i := range b {
+        b[i] = charset[rand.Intn(len(charset))]
+    }
+    return string(b)
+}
+
+func Slugify(s string) string {
+    s = strings.ToLower(s)
+    s = strings.ReplaceAll(s, " ", "-")
+    // Remove special characters
+    // Add more sophisticated logic as needed
+    return s
+}
+```
+
+## Design Guidelines
+
+### ✅ Good Utilities
+- **Pure Functions**: No side effects
+- **Reusable**: Used in multiple places
+- **Well Tested**: Comprehensive unit tests
+- **Single Responsibility**: Each function does one thing
+- **Error Handling**: Proper error handling and validation
+
+### ❌ Avoid in Utils
+- Business logic (belongs in domain/services)
+- Database-specific operations (belongs in infrastructure)
+- HTTP-specific code (belongs in interfaces)
+- Configuration management (belongs in config)
+
+## Testing Utilities
+
+```go
+package validator
+
+import (
+    "testing"
+    "github.com/stretchr/testify/assert"
+)
+
+func TestPasswordStrengthValidation(t *testing.T) {
+    v := NewValidator()
+
+    type testStruct struct {
+        Password string `validate:"password_strength"`
+    }
+
+    tests := []struct {
+        name      string
+        password  string
+        shouldErr bool
+    }{
+        {"Valid password", "Password123", false},
+        {"Too short", "Pass1", true},
+        {"No uppercase", "password123", true},
+        {"No lowercase", "PASSWORD123", true},
+        {"No digit", "Password", true},
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            ts := testStruct{Password: tt.password}
+            err := v.Validate(ts)
+
+            if tt.shouldErr {
+                assert.Error(t, err)
+            } else {
+                assert.NoError(t, err)
+            }
+        })
+    }
+}
+```
+
+## Usage Examples
+
+```go
+// In service layer
+func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) error {
+    // Use password utility
+    hashedPassword, err := s.passwordUtil.HashPassword(req.Password)
+    if err != nil {
+        return err
+    }
+
+    // Use helper function
+    username := helpers.Slugify(req.Username)
+
+    // Create user...
+    return nil
+}
+
+// In handler layer
+func (h *authHandler) Login(c *gin.Context) {
+    // Validate input
+    if err := h.validator.Validate(&req); err != nil {
+        // Handle validation error
+        return
+    }
+
+    // Generate JWT token
+    token, err := h.jwtUtil.GenerateToken(user.ID, user.Username, user.Role)
+    if err != nil {
+        // Handle error
+        return
+    }
+
+    // Return token...
+}
+```
+
+This layer provides **reliable, reusable utilities** that keep your other layers clean and focused on their primary responsibilities.
 EOF
 
-# ========================================
-# Create example files
-# ========================================
+# pkg/ directory README
+cat > pkg/README.md << 'EOF'
+# pkg/ - Public Packages
+
+## Purpose
+Contains library code that can be imported by external applications. These packages should be **stable, well-documented, and backward-compatible**.
+
+## Structure
+```
+pkg/
+├── logger/               # Logging utilities
+├── errors/              # Custom error types
+└── constants/           # Application constants
+```
+
+## Responsibilities
+
+### 📝 logger/
+- **Structured Logging**: JSON/structured log output
+- **Log Levels**: Support for different log levels (debug, info, warn, error)
+- **Context Logging**: Contextual information in logs
+- **Multiple Outputs**: Console, file, remote logging services
+- **Performance**: High-performance logging suitable for production
+
+### ❌ errors/
+- **Custom Error Types**: Application-specific error definitions
+- **Error Codes**: Standardized error codes for APIs
+- **Error Wrapping**: Enhanced error context and stack traces
+- **Error Classification**: Business vs technical errors
+
+### 🔧 constants/
+- **Application Constants**: App-wide constants
+- **Configuration Keys**: Environment variable keys
+- **Cache Keys**: Redis cache key patterns
+- **API Constants**: HTTP status codes, headers, etc.
+
+## Logger Implementation
+
+```go
+package logger
+
+import (
+    "go.uber.org/zap"
+    "go.uber.org/zap/zapcore"
+)
+
+type Logger interface {
+    Debug(msg string, fields map[string]interface{})
+    Info(msg string, fields map[string]interface{})
+    Warn(msg string, fields map[string]interface{})
+    Error(msg string, fields map[string]interface{})
+    Fatal(msg string, fields map[string]interface{})
+    With(fields map[string]interface{}) Logger
+}
+
+type zapLogger struct {
+    logger *zap.Logger
+}
+
+func NewZapLogger(environment string) Logger {
+    var config zap.Config
+
+    if environment == "production" {
+        config = zap.NewProductionConfig()
+    } else {
+        config = zap.NewDevelopmentConfig()
+        config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+    }
+
+    logger, _ := config.Build()
+    return &zapLogger{logger: logger}
+}
+
+func (l *zapLogger) Info(msg string, fields map[string]interface{}) {
+    l.logger.Info(msg, l.mapToZapFields(fields)...)
+}
+
+func (l *zapLogger) mapToZapFields(fields map[string]interface{}) []zap.Field {
+    zapFields := make([]zap.Field, 0, len(fields))
+    for key, value := range fields {
+        zapFields = append(zapFields, zap.Any(key, value))
+    }
+    return zapFields
+}
+
+// Usage in application
+func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) error {
+    s.logger.Info("Creating user", map[string]interface{}{
+        "username": req.Username,
+        "email":    req.Email,
+    })
+
+    // ... service logic
+
+    s.logger.Info("User created successfully", map[string]interface{}{
+        "user_id": user.ID,
+        "username": user.Username,
+    })
+
+    return nil
+}
+```
+
+## Custom Errors
+
+```go
+package errors
+
+import (
+    "fmt"
+    "net/http"
+)
+
+// Error codes for API responses
+const (
+    // User errors
+    CodeUserNotFound         = "USER_NOT_FOUND"
+    CodeEmailAlreadyExists   = "EMAIL_ALREADY_EXISTS"
+    CodeUsernameExists       = "USERNAME_ALREADY_EXISTS"
+    CodeInvalidCredentials   = "INVALID_CREDENTIALS"
+
+    // Project errors
+    CodeProjectNotFound      = "PROJECT_NOT_FOUND"
+    CodeProjectAccessDenied  = "PROJECT_ACCESS_DENIED"
+
+    // Auth errors
+    CodeUnauthorized         = "UNAUTHORIZED"
+    CodeForbidden           = "FORBIDDEN"
+    CodeInvalidToken        = "INVALID_TOKEN"
+
+    // General errors
+    CodeValidationFailed    = "VALIDATION_FAILED"
+    CodeInternalError       = "INTERNAL_ERROR"
+)
+
+// AppError represents an application error with context
+type AppError struct {
+    Code       string                 `json:"code"`
+    Message    string                 `json:"message"`
+    Details    map[string]interface{} `json:"details,omitempty"`
+    StatusCode int                    `json:"-"`
+    Err        error                  `json:"-"`
+}
+
+func (e *AppError) Error() string {
+    if e.Err != nil {
+        return fmt.Sprintf("%s: %s (%v)", e.Code, e.Message, e.Err)
+    }
+    return fmt.Sprintf("%s: %s", e.Code, e.Message)
+}
+
+func (e *AppError) Unwrap() error {
+    return e.Err
+}
+
+// Error constructors
+func NewUserNotFoundError() *AppError {
+    return &AppError{
+        Code:       CodeUserNotFound,
+        Message:    "User not found",
+        StatusCode: http.StatusNotFound,
+    }
+}
+
+func NewValidationError(details map[string]interface{}) *AppError {
+    return &AppError{
+        Code:       CodeValidationFailed,
+        Message:    "Validation failed",
+        Details:    details,
+        StatusCode: http.StatusBadRequest,
+    }
+}
+
+func NewInternalError(err error) *AppError {
+    return &AppError{
+        Code:       CodeInternalError,
+        Message:    "Internal server error",
+        StatusCode: http.StatusInternalServerError,
+        Err:        err,
+    }
+}
+
+// Error checking helpers
+func IsUserNotFound(err error) bool {
+    var appErr *AppError
+    return errors.As(err, &appErr) && appErr.Code == CodeUserNotFound
+}
+
+func IsValidationError(err error) bool {
+    var appErr *AppError
+    return errors.As(err, &appErr) && appErr.Code == CodeValidationFailed
+}
+```
+
+## Constants
+
+```go
+package constants
+
+// Application constants
+const (
+    AppName        = "Project Management API"
+    AppVersion     = "1.0.0"
+    DefaultTimeout = 30 // seconds
+)
+
+// Environment constants
+const (
+    EnvDevelopment = "development"
+    EnvProduction  = "production"
+    EnvTest        = "test"
+)
+
+// Cache key patterns
+const (
+    CacheKeyUser        = "user:%d"
+    CacheKeyUserProfile = "user_profile:%d"
+    CacheKeyProject     = "project:%d"
+    CacheKeyUserProjects = "user_projects:%d:page:%d"
+    CacheKeyCategories  = "categories"
+)
+
+// Cache TTL (in seconds)
+const (
+    CacheTTLShort  = 300   // 5 minutes
+    CacheTTLMedium = 1800  // 30 minutes
+    CacheTTLLong   = 3600  // 1 hour
+    CacheTTLDay    = 86400 // 24 hours
+)
+
+// HTTP headers
+const (
+    HeaderAuthorization = "Authorization"
+    HeaderContentType   = "Content-Type"
+    HeaderUserAgent     = "User-Agent"
+    HeaderXRequestID    = "X-Request-ID"
+)
+
+// Content types
+const (
+    ContentTypeJSON = "application/json"
+    ContentTypeXML  = "application/xml"
+    ContentTypeForm = "application/x-www-form-urlencoded"
+)
+
+// Database constants
+const (
+    DefaultPageSize = 20
+    MaxPageSize     = 100
+    DefaultPage     = 1
+)
+
+// Project status constants
+const (
+    ProjectStatusPlanning  = "planning"
+    ProjectStatusActive    = "active"
+    ProjectStatusOnHold    = "on_hold"
+    ProjectStatusCompleted = "completed"
+    ProjectStatusCancelled = "cancelled"
+)
+
+// User roles
+const (
+    RoleAdmin = "admin"
+    RoleUser  = "user"
+)
+
+// JWT constants
+const (
+    JWTTokenType = "Bearer"
+    JWTClaimUserID = "user_id"
+    JWTClaimRole = "role"
+    JWTClaimUsername = "username"
+)
+```
+
+## Usage Examples
+
+### Using Logger
+```go
+// In service layer
+func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) error {
+    logger := s.logger.With(map[string]interface{}{
+        "operation": "CreateUser",
+        "username":  req.Username,
+    })
+
+    logger.Info("Starting user creation")
+
+    // ... business logic
+
+    if err != nil {
+        logger.Error("Failed to create user", map[string]interface{}{
+            "error": err.Error(),
+        })
+        return err
+    }
+
+    logger.Info("User created successfully", map[string]interface{}{
+        "user_id": user.ID,
+    })
+
+    return nil
+}
+```
+
+### Using Custom Errors
+```go
+// In repository layer
+func (r *userRepository) FindByID(ctx context.Context, id int) (*entities.User, error) {
+    var user entities.User
+    err := r.db.WithContext(ctx).First(&user, id).Error
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, customerrors.NewUserNotFoundError()
+        }
+        return nil, customerrors.NewInternalError(err)
+    }
+    return &user, nil
+}
+
+// In handler layer
+func (h *userHandler) GetUser(c *gin.Context) {
+    user, err := h.userService.GetUserByID(ctx, id)
+    if err != nil {
+        var appErr *customerrors.AppError
+        if errors.As(err, &appErr) {
+            c.JSON(appErr.StatusCode, gin.H{
+                "error": appErr,
+            })
+            return
+        }
+        // Handle unknown errors
+        c.JSON(500, gin.H{"error": "Internal server error"})
+        return
+    }
+
+    c.JSON(200, user)
+}
+```
+
+### Using Constants
+```go
+// In cache service
+func (c *cacheService) GetUser(ctx context.Context, userID int) (*entities.User, error) {
+    key := fmt.Sprintf(constants.CacheKeyUser, userID)
+
+    var user entities.User
+    err := c.redis.Get(ctx, key, &user)
+    if err != nil {
+        return nil, err
+    }
+
+    return &user, nil
+}
+
+func (c *cacheService) SetUser(ctx context.Context, user *entities.User) error {
+    key := fmt.Sprintf(constants.CacheKeyUser, user.ID)
+    return c.redis.Set(ctx, key, user, constants.CacheTTLMedium)
+}
+```
+
+## Design Guidelines
+
+### ✅ Good Practices for pkg/
+- **Stable APIs**: Don't break backward compatibility
+- **Comprehensive Documentation**: Include examples and usage
+- **Minimal Dependencies**: Reduce external dependencies
+- **Interface-Based**: Define interfaces for extensibility
+- **Well Tested**: Comprehensive test coverage
+
+### ❌ Avoid in pkg/
+- Internal application logic
+- Framework-specific code
+- Business rules
+- Configuration management
+- Database models
+
+## Versioning
+Since pkg/ contains public APIs, consider semantic versioning:
+- **Major version**: Breaking changes
+- **Minor version**: New features (backward compatible)
+- **Patch version**: Bug fixes
+
+This layer provides **stable, reusable components** that can be shared across multiple projects or used by external consumers.
+EOF
+
+# Create other necessary README files for remaining directories
+
+# api/ directory README
+cat > api/README.md << 'EOF'
+# api/ - API Documentation
+
+## Purpose
+Contains API documentation, specifications, and client tools for the project.
+
+## Structure
+```
+api/
+├── swagger/              # OpenAPI/Swagger documentation
+└── postman/             # Postman collections
+```
+
+## Contents
+
+### swagger/
+- OpenAPI 3.0 specifications
+- Auto-generated documentation from code annotations
+- Interactive API documentation
+- Schema definitions
+
+### postman/
+- Postman collection files
+- Environment configurations
+- Pre-request scripts and tests
+- API testing scenarios
+
+## Usage
+
+### Generate Swagger Docs
+```bash
+make swagger
+```
+
+### View Documentation
+```bash
+# Serve swagger UI locally
+swagger-ui-serve api/swagger/swagger.yaml
+```
+
+### Import Postman Collection
+1. Open Postman
+2. Import `api/postman/project_management.postman_collection.json`
+3. Set up environment variables
+4. Start testing endpoints
+EOF
+
+# scripts/ directory README
+cat > scripts/README.md << 'EOF'
+# scripts/ - Build and Deployment Scripts
+
+## Purpose
+Contains automation scripts for building, testing, and deploying the application.
+
+## Scripts
+
+### build.sh
+- Build the Go application
+- Set build information (version, commit, build time)
+- Create binaries for different platforms
+
+### migrate.sh
+- Run database migrations
+- Wait for database connectivity
+- Handle migration rollbacks
+
+### deploy.sh
+- Deploy to different environments
+- Build and push Docker images
+- Update Kubernetes deployments
+
+### seed.sh
+- Seed database with initial data
+- Create default users and categories
+- Set up development data
+
+## Usage
+```bash
+# Make scripts executable
+chmod +x scripts/*.sh
+
+# Run specific script
+./scripts/build.sh
+./scripts/migrate.sh
+```
+EOF
+
+# deployments/ directory README
+cat > deployments/README.md << 'EOF'
+# deployments/ - Deployment Configurations
+
+## Purpose
+Contains containerization and orchestration configurations for different deployment environments.
+
+## Structure
+```
+deployments/
+├── docker/              # Docker configurations
+└── kubernetes/          # Kubernetes manifests
+```
+
+## Docker
+- **Dockerfile**: Multi-stage build for Go application
+- **docker-compose.yml**: Development environment setup
+- **docker-compose.prod.yml**: Production environment setup
+
+## Kubernetes
+- **namespace.yaml**: Kubernetes namespace
+- **deployment.yaml**: Application deployment
+- **service.yaml**: Service definitions
+- **configmap.yaml**: Configuration management
+
+## Usage
+
+### Docker
+```bash
+# Development
+docker-compose up -d
+
+# Production
+docker-compose -f deployments/docker/docker-compose.prod.yml up -d
+```
+
+### Kubernetes
+```bash
+kubectl apply -f deployments/kubernetes/
+```
+EOF
+
+# configs/ directory README
+cat > configs/README.md << 'EOF'
+# configs/ - Configuration Files
+
+## Purpose
+Contains configuration files for different environments.
+
+## Files
+- **config.yaml**: Default development configuration
+- **config.prod.yaml**: Production configuration
+- **config.test.yaml**: Test environment configuration
+
+## Environment Variables
+Configuration can be overridden using environment variables:
+- `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`
+- `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
+- `JWT_SECRET`
+
+## Usage
+Application automatically loads the appropriate config based on `APP_ENV` environment variable.
+EOF
+
+# tests/ directory README
+cat > tests/README.md << 'EOF'
+# tests/ - Test Files
+
+## Purpose
+Contains all test files organized by test type and layer.
+
+## Structure
+```
+tests/
+├── unit/                # Unit tests
+├── integration/         # Integration tests
+└── fixtures/           # Test data fixtures
+```
+
+## Test Types
+
+### Unit Tests
+- Test individual functions/methods in isolation
+- Mock external dependencies
+- Fast execution
+- High code coverage
+
+### Integration Tests
+- Test component interactions
+- Use real databases (test containers)
+- Test API endpoints end-to-end
+- Slower but more comprehensive
+
+### Fixtures
+- Sample data for tests
+- JSON/YAML test data files
+- Reusable test scenarios
+
+## Running Tests
+```bash
+# All tests
+make test
+
+# Unit tests only
+go test -short ./...
+
+# Integration tests
+go test -run Integration ./...
+
+# With coverage
+make test-coverage
+```
+EOF
+
+# docs/ directory README
+cat > docs/README.md << 'EOF'
+# docs/ - Project Documentation
+
+## Purpose
+Contains comprehensive project documentation.
+
+## Documents
+- **README.md**: Project overview and quick start
+- **API.md**: Detailed API documentation
+- **DEPLOYMENT.md**: Deployment guides
+- **ARCHITECTURE.md**: System architecture documentation
+- **CONTRIBUTING.md**: Contribution guidelines
+
+## Usage
+Documentation is written in Markdown and should be kept up-to-date with code changes.
+EOF
+
+# Create placeholder files with basic content
 
 # Create main.go
-cat > cmd/main.go << 'EOF'
+cat > cmd/server/main.go << 'EOF'
 package main
 
 import (
-    "log"
-    "os"
-    "os/signal"
-
-    "github.com/gofiber/fiber/v2"
-    "github.com/gofiber/fiber/v2/middleware/logger"
-    "github.com/gofiber/fiber/v2/middleware/recover"
+	"log"
+	"os"
 )
 
 func main() {
-    // TODO: Initialize config, database, repositories, handlers
+	log.Println("🚀 Starting Project Management Backend...")
+	log.Println("📝 TODO: Implement application bootstrap")
+	log.Println("💡 See cmd/README.md for implementation guidance")
 
-    app := fiber.New(fiber.Config{
-        AppName: "My API v1.0.0",
-    })
+	// TODO: Implement application initialization
+	// 1. Load configuration
+	// 2. Initialize database
+	// 3. Setup Redis
+	// 4. Wire up dependencies
+	// 5. Start HTTP server
 
-    // Middlewares
-    app.Use(recover.New())
-    app.Use(logger.New())
-
-    // Health check
-    app.Get("/health", func(c *fiber.Ctx) error {
-        return c.JSON(fiber.Map{
-            "status":  "ok",
-            "message": "Server is running",
-        })
-    })
-
-    // Graceful shutdown
-    c := make(chan os.Signal, 1)
-    signal.Notify(c, os.Interrupt)
-    go func() {
-        <-c
-        log.Println("🛑 Gracefully shutting down...")
-        app.Shutdown()
-    }()
-
-    log.Println("🚀 Server starting on :3000")
-    if err := app.Listen(":3000"); err != nil {
-        log.Fatal("❌ Failed to start server:", err)
-    }
+	os.Exit(0)
 }
+EOF
+
+# Create go.mod template
+cat > go.mod << 'EOF'
+module github.com/yourusername/project-management-backend
+
+go 1.21
+
+require (
+	github.com/gin-gonic/gin v1.9.1
+	github.com/go-redis/redis/v8 v8.11.5
+	github.com/go-playground/validator/v10 v10.15.5
+	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/spf13/viper v1.17.0
+	golang.org/x/crypto v0.14.0
+	gorm.io/driver/mysql v1.5.2
+	gorm.io/gorm v1.25.5
+	go.uber.org/zap v1.26.0
+)
+EOF
+
+# Create basic config file
+cat > configs/config.yaml << 'EOF'
+app:
+  name: "Project Management Backend"
+  version: "1.0.0"
+  environment: "development"
+
+server:
+  host: "localhost"
+  port: "8080"
+  read_timeout: 30
+  write_timeout: 30
+
+database:
+  driver: "mysql"
+  host: "localhost"
+  port: 3306
+  username: "root"
+  password: "password"
+  database: "project_management"
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 60
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+
+jwt:
+  secret: "your-super-secret-jwt-key-here"
+  expiration: 24
 EOF
 
 # Create .env.example
 cat > .env.example << 'EOF'
-# Server Configuration
-PORT=3000
-ENVIRONMENT=development
+# Application
+APP_ENV=development
+APP_NAME="Project Management Backend"
 
-# Database Configuration
+# Database
 DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=your_password
-DB_NAME=myapp
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=password
+DB_NAME=project_management
 
-# JWT Configuration
-JWT_SECRET=your-super-secret-key-change-this
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
 
-# External Services (Optional)
-PAYMENT_API_KEY=
-SMTP_HOST=
-SMTP_PORT=
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-here
+
+# Server
+SERVER_PORT=8080
+EOF
+
+# Create Makefile
+cat > Makefile << 'EOF'
+.PHONY: build run test clean deps
+
+# Build the application
+build:
+	go build -o bin/server cmd/server/main.go
+
+# Run the application
+run:
+	go run cmd/server/main.go
+
+# Install dependencies
+deps:
+	go mod download
+	go mod tidy
+
+# Run tests
+test:
+	go test -v ./...
+
+# Run tests with coverage
+test-coverage:
+	go test -v -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
+# Clean build artifacts
+clean:
+	rm -rf bin/
+	rm -f coverage.out coverage.html
+
+# Format code
+fmt:
+	go fmt ./...
+
+# Run linter (requires golangci-lint)
+lint:
+	golangci-lint run
+
+# Generate swagger docs (requires swag)
+swagger:
+	swag init -g cmd/server/main.go -o ./api/swagger
+
+# Build and run with docker-compose
+docker-up:
+	docker-compose up --build -d
+
+docker-down:
+	docker-compose down
+
+# Database operations
+migrate:
+	./scripts/migrate.sh
+
+seed:
+	./scripts/seed.sh
 EOF
 
 # Create .gitignore
@@ -1642,8 +2226,15 @@ cat > .gitignore << 'EOF'
 *.dll
 *.so
 *.dylib
-bin/
-dist/
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
 
 # Environment variables
 .env
@@ -1654,167 +2245,73 @@ dist/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Go
-vendor/
-*.test
-*.out
+# Build artifacts
+bin/
+dist/
 
 # Logs
 *.log
-logs/
 
-# Temporary files
+# Coverage
+coverage.html
+
+# Dependencies
+vendor/
+
+# Air temp files
 tmp/
-temp/
 EOF
 
-# Create go.mod
-cat > go.mod << 'EOF'
-module myproject
+# Create basic placeholder files for key directories
+touch internal/domain/entities/.keep
+touch internal/domain/repositories/.keep
+touch internal/domain/services/.keep
+touch internal/application/services/.keep
+touch internal/application/dto/.keep
+touch internal/infrastructure/database/mysql/.keep
+touch internal/infrastructure/cache/redis/.keep
+touch internal/interfaces/http/handlers/.keep
+touch internal/interfaces/http/middleware/.keep
+touch internal/utils/validator/.keep
+touch pkg/logger/.keep
+touch pkg/errors/.keep
+touch api/swagger/.keep
+touch tests/unit/.keep
+touch tests/integration/.keep
 
-go 1.21
-
-require (
-    github.com/gofiber/fiber/v2 v2.52.0
-    github.com/google/uuid v1.5.0
-    github.com/joho/godotenv v1.5.1
-    github.com/golang-jwt/jwt/v5 v5.2.0
-    github.com/go-playground/validator/v10 v10.16.0
-    golang.org/x/crypto v0.17.0
-    gorm.io/driver/postgres v1.5.4
-    gorm.io/gorm v1.25.5
-)
-EOF
-
-# Create README.md
-cat > README.md << 'EOF'
-# My Go Project
-
-Clean Architecture Simple - Fast Development Structure with Fiber
-
-## 📁 Project Structure
-```
-.
-├── cmd/                # Entry point
-├── config/             # Configuration
-├── models/             # Database models
-├── handlers/           # HTTP handlers
-├── repositories/       # Data access layer
-├── middlewares/        # HTTP middlewares
-├── utils/              # Helper functions
-└── routes/             # Route definitions
-```
-
-## 🚀 Quick Start
-
-1. **Clone & Setup**
-```bash
-   cd myproject
-   cp .env.example .env
-   # Edit .env with your configuration
-```
-
-2. **Install Dependencies**
-```bash
-   go mod download
-```
-
-3. **Run**
-```bash
-   go run cmd/main.go
-```
-
-4. **Test**
-```bash
-   curl http://localhost:3000/health
-```
-
-## 📖 Documentation
-
-Each folder contains a README.md with:
-- Philosophy
-- Definition
-- Examples
-- Best practices
-
-Start reading from:
-1. `cmd/README.md` - Entry point
-2. `models/README.md` - Data structures
-3. `handlers/README.md` - Business logic
-4. `routes/README.md` - API endpoints
-
-## 🛠️ Development
-
-### Add New Feature
-
-1. Create model in `models/`
-2. Create repository in `repositories/`
-3. Create handler in `handlers/`
-4. Register routes in `routes/`
-
-## 📚 Tech Stack
-
-- **Framework**: Fiber (Fast Express-like framework)
-- **ORM**: GORM
-- **Database**: PostgreSQL
-- **Auth**: JWT
-- **Validation**: go-playground/validator
-
-## 🎯 Why Fiber?
-
-- ⚡ Extremely fast (built on fasthttp)
-- 🎨 Express.js-like syntax
-- 🔧 Zero memory allocation router
-- 💪 Robust middleware support
-- 📝 Great documentation
-
-## 🤝 Contributing
-
-1. Read documentation in each folder
-2. Follow existing patterns
-3. Keep it simple
-
-## 📝 License
-
-MIT
-EOF
+# Make scripts executable
+chmod +x scripts/*.sh 2>/dev/null || true
 
 echo ""
-echo "================================================"
-echo "✅ Structure generated successfully!"
-echo "================================================"
+echo "✅ Project structure created successfully!"
 echo ""
-echo "📂 Project created at: $PROJECT_NAME/"
+echo "📁 Directory structure:"
+echo "   - $(find . -type d | wc -l) directories created"
+echo "   - $(find . -name "README.md" | wc -l) README files with detailed explanations"
+echo "   - Essential configuration files and templates"
 echo ""
-echo "📖 Next steps:"
-echo "  1. cd $PROJECT_NAME"
-echo "  2. Read README.md"
-echo "  3. Read cmd/README.md to understand the flow"
-echo "  4. cp .env.example .env"
-echo "  5. go mod download"
-echo "  6. go run cmd/main.go"
+echo "🚀 Next steps:"
+echo "1. cd $PROJECT_NAME"
+echo "2. go mod tidy"
+echo "3. Read the README.md files in each directory"
+echo "4. Customize configs/config.yaml"
+echo "5. cp .env.example .env && edit .env"
+echo "6. Start implementing based on the guidelines in each README.md"
 echo ""
-echo "💡 Each folder has detailed documentation in README.md"
-echo "   Start with cmd/README.md → models/README.md → handlers/README.md"
+echo "📖 Architecture Overview:"
+echo "   Domain → Application → Infrastructure → Interface"
+echo "   Clean Architecture with Repository Pattern implemented!"
 echo ""
-echo "🚀 Using Fiber - The Express.js of Go!"
-echo "🎉 Happy coding!"
-EOF
-
-chmod +x generate-simple-structure.sh
-
+echo "🛠️  Available Make commands:"
+echo "   make deps     # Install dependencies"
+echo "   make build    # Build application"
+echo "   make run      # Run application"
+echo "   make test     # Run tests"
+echo "   make fmt      # Format code"
 echo ""
-echo "✅ Shell script created: generate-simple-structure.sh"
-echo ""
-echo "📝 Usage:"
-echo "   bash generate-simple-structure.sh [project-name]"
-echo ""
-echo "Example:"
-echo "   bash generate-simple-structure.sh my-fiber-api"
-echo ""
+echo "Happy coding! 🎉"

@@ -1,89 +1,58 @@
-# My Go Project
+# Project Management Backend
 
-Clean Architecture Simple - Fast Development Structure with Fiber
+A robust project management backend built with **Go**, **Gin**, **GORM**, and **Redis** implementing **Repository Pattern** and **Clean Architecture**.
 
-## 📁 Project Structure
+## Architecture Overview
+
 ```
-.
-├── cmd/                # Entry point
-├── config/             # Configuration
-├── models/             # Database models
-├── handlers/           # HTTP handlers
-├── repositories/       # Data access layer
-├── middlewares/        # HTTP middlewares
-├── utils/              # Helper functions
-└── routes/             # Route definitions
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Interface     │    │   Application   │    │     Domain      │
+│   (HTTP/gRPC)   │───▶│   (Services)    │───▶│   (Business)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Infrastructure │    │      Utils      │    │      Config     │
+│ (DB/Cache/API)  │    │   (Helpers)     │    │   (Settings)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
-1. **Clone & Setup**
-```bash
-   cd myproject
+1. **Setup Project**
+   ```bash
+   go mod init github.com/yourusername/project-management-backend
+   go mod tidy
+   ```
+
+2. **Configure Environment**
+   ```bash
    cp .env.example .env
-   # Edit .env with your configuration
-```
+   # Edit .env with your settings
+   ```
 
-2. **Install Dependencies**
-```bash
-   go mod download
-```
+3. **Run with Docker**
+   ```bash
+   make docker-up
+   ```
 
-3. **Run**
-```bash
-   go run cmd/main.go
-```
+## Directory Structure
 
-4. **Test**
-```bash
-   curl http://localhost:3000/health
-```
+Each directory has its own README.md explaining its purpose and responsibilities.
 
-## 📖 Documentation
+## Features
 
-Each folder contains a README.md with:
-- Philosophy
-- Definition
-- Examples
-- Best practices
+- ✅ Clean Architecture with Repository Pattern
+- ✅ JWT Authentication & Authorization
+- ✅ Redis Caching Layer
+- ✅ MySQL Database with GORM
+- ✅ RESTful API with Gin
+- ✅ Docker Support
+- ✅ Comprehensive Testing
+- ✅ API Documentation
+- ✅ Database Migrations
+- ✅ Logging & Monitoring
 
-Start reading from:
-1. `cmd/README.md` - Entry point
-2. `models/README.md` - Data structures
-3. `handlers/README.md` - Business logic
-4. `routes/README.md` - API endpoints
+## Contributing
 
-## 🛠️ Development
-
-### Add New Feature
-
-1. Create model in `models/`
-2. Create repository in `repositories/`
-3. Create handler in `handlers/`
-4. Register routes in `routes/`
-
-## 📚 Tech Stack
-
-- **Framework**: Fiber (Fast Express-like framework)
-- **ORM**: GORM
-- **Database**: PostgreSQL
-- **Auth**: JWT
-- **Validation**: go-playground/validator
-
-## 🎯 Why Fiber?
-
-- ⚡ Extremely fast (built on fasthttp)
-- 🎨 Express.js-like syntax
-- 🔧 Zero memory allocation router
-- 💪 Robust middleware support
-- 📝 Great documentation
-
-## 🤝 Contributing
-
-1. Read documentation in each folder
-2. Follow existing patterns
-3. Keep it simple
-
-## 📝 License
-
-MIT
+Please read the individual README files in each directory to understand the codebase structure and conventions.
