@@ -1,0 +1,38 @@
+package migrations
+
+import "gorm.io/gorm"
+
+func init() {
+	Register(Migration{
+		Version: 1,
+		Name:    "create_resources_table",
+		Up: func(db *gorm.DB) error {
+			return db.Exec(`
+			    CREATE TABLE IF NOT EXISTS resources (
+			        resource_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			        vendor_id UUID NOT NULL,
+			        resource_name VARCHAR(255) NOT NULL,
+			        resource_type VARCHAR(255) NOT NULL,
+			        category_id UUID NOT NULL,
+			        description TEXT,
+			        capacity INT NOT NULL,
+			        price_per_unit DECIMAL(10, 2) NOT NULL,
+			        images JSONB,
+			        location VARCHAR(255),
+			        status VARCHAR(20) NOT NULL DEFAULT 'active',
+			        CONSTRAINT chk_status CHECK (status IN ('active', 'inactive')),
+			        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			        deleted_at TIMESTAMP DEFAULT NULL,
+			        FOREIGN KEY (vendor_id) REFERENCES vendors(vendor_id),
+			        FOREIGN KEY (category_id) REFERENCES categories(category_id)
+			    );
+			    CREATE INDEX idx_resources_category_id ON resources(category_id);
+			    CREATE INDEX idx_resources_resource_name ON resources(resource_name);
+			`).Error
+		},
+		Down: func(db *gorm.DB) error {
+			return db.Exec("DROP TABLE IF EXISTS resources CASCADE;").Error
+		},
+	})
+}
