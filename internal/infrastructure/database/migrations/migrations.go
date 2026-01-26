@@ -21,7 +21,6 @@ type Migration struct {
 var migrations []Migration
 
 // Register function untuk menambahkan migration ke slice
-// ⬇️ INI DIA FUNCTION REGISTER
 func Register(m Migration) {
 	migrations = append(migrations, m)
 }

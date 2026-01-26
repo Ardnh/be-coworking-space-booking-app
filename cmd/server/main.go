@@ -21,9 +21,15 @@ func main() {
 	// 1. Load configuration
 	logger := logger.New()
 	cfg := config.LoadConfig()
+	// validator := validator.New()
 
 	// 2. Initialize database
-	// 3. Setup Redis
+	// db, err := postgresql.NewPostgresDB(cfg)
+	// if err != nil {
+	// 	log.Fatalf("❌ Failed to connect to database: %v", err)
+	// }
+	// defer postgresql.CloseDB(db)
+
 	// 4. Wire up dependencies
 	// 5. Start HTTP server
 	app := fiber.New()
