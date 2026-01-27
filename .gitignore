@@ -4,8 +4,15 @@
 *.dll
 *.so
 *.dylib
-bin/
-dist/
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
 
 # Environment variables
 .env
@@ -17,21 +24,23 @@ dist/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Go
-vendor/
-*.test
-*.out
+# Build artifacts
+bin/
+dist/
 
 # Logs
 *.log
-logs/
 
-# Temporary files
+# Coverage
+coverage.html
+
+# Dependencies
+vendor/
+
+# Air temp files
 tmp/
-temp/

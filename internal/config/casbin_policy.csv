@@ -1,0 +1,8 @@
+# Public endpoints - bisa diakses tanpa login
+p, anonymous, /api/register, POST
+p, anonymous, /api/login, POST
+
+p, admin, /api/users, GET
+p, admin, /api/users, POST
+p, admin, /api/users/:id, PUT
+p, admin, /api/users/:id, DELETE
