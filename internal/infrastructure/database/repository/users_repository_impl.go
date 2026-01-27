@@ -6,6 +6,7 @@ import (
 
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/entities"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/repositories"
+	"github.com/google/uuid"
 
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -52,10 +53,15 @@ func (r *userRepositoryImpl) GetAllUsers(ctx context.Context, usernameQuery stri
 	}
 
 	if err := query.Find(&users).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return users, nil
+	var total int64 = 0
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return users, int(total), nil
 }
 
 func (r *userRepositoryImpl) CreateUser(ctx context.Context, user *entities.Users) error {
@@ -103,7 +109,7 @@ func (r *userRepositoryImpl) UpdateUser(ctx context.Context, user *entities.User
 	return nil
 }
 
-func (r *userRepositoryImpl) DeleteUser(ctx context.Context, userID string) error {
+func (r *userRepositoryImpl) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 
 	var existingUser entities.Users
 	err := r.db.WithContext(ctx).

@@ -4,13 +4,13 @@ import "gorm.io/gorm"
 
 func init() {
 	Register(Migration{
-		Version: 1,
+		Version: 9,
 		Name:    "create_reviews_table",
 		Up: func(db *gorm.DB) error {
 			return db.Exec(`
 				CREATE TABLE IF NOT EXISTS reviews (
 				    review_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-					booking_id UUID NOT NULL
+					booking_id UUID NOT NULL,
 					user_id UUID NOT NULL,
 					resource_id UUID NOT NULL,
 					vendor_id UUID NOT NULL,

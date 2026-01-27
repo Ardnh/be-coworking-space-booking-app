@@ -6,7 +6,8 @@ import (
 
 func init() {
 	Register(Migration{
-		Name: "006_create_availability_slot_table",
+		Version: 6,
+		Name:    "006_create_availability_slot_table",
 		Up: func(db *gorm.DB) error {
 			return db.Exec(`
 				CREATE TABLE IF NOT EXISTS availability_slots (

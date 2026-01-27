@@ -2,32 +2,32 @@ version: "3.8"
 
 services:
     # Golang Application
-    app:
-        build:
-            context: .
-            dockerfile: Dockerfile
-        container_name: golang_app
-        ports:
-            - "8080:8080"
-        environment:
-            - APP_ENV=development
-            - APP_PORT=8080
-            - APP_JWT_SECRET=0199feec-c0ad-78d2-8e96-75af55cbbf38
-            - DB_HOST=postgres
-            - DB_PORT=5432
-            - DB_USER=root
-            - DB_PASSWORD=root
-            - DB_NAME=project_app_db
-            - REDIS_HOST=redis
-            - REDIS_PORT=6379
-        depends_on:
-            postgres:
-                condition: service_healthy
-            redis:
-                condition: service_healthy
-        networks:
-            - project-app-network
-        restart: unless-stopped
+    # app:
+    #     build:
+    #         context: .
+    #         dockerfile: Dockerfile
+    #     container_name: golang_app
+    #     ports:
+    #         - "8080:8080"
+    #     environment:
+    #         - APP_ENV=development
+    #         - APP_PORT=8080
+    #         - APP_JWT_SECRET=0199feec-c0ad-78d2-8e96-75af55cbbf38
+    #         - DB_HOST=postgres
+    #         - DB_PORT=5432
+    #         - DB_USER=root
+    #         - DB_PASSWORD=root
+    #         - DB_NAME=project_app_db
+    #         - REDIS_HOST=redis
+    #         - REDIS_PORT=6379
+    #     depends_on:
+    #         postgres:
+    #             condition: service_healthy
+    #         redis:
+    #             condition: service_healthy
+    #     networks:
+    #         - project-app-network
+    #     restart: unless-stopped
 
     # PostgreSQL Database
     postgres:
@@ -38,16 +38,16 @@ services:
         environment:
             - POSTGRES_USER=root
             - POSTGRES_PASSWORD=root
-            - POSTGRES_DB=project_app_db
+            - POSTGRES_DB=coworking_space_app_db
         volumes:
             - postgres_data:/var/lib/postgresql/data
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U root -d project_app_db"]
+            test: ["CMD-SHELL", "pg_isready -U root -d coworking_space_app_db"]
             interval: 10s
             timeout: 5s
             retries: 5
         networks:
-            - project-app-network
+            - coworking-space-app-network
         restart: unless-stopped
 
     # Redis Cache
@@ -62,13 +62,15 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
+        ports:
+            - "6379:6379"
         networks:
-            - project-app-network
+            - coworking-space-app-network
         restart: unless-stopped
 
 # Networks
 networks:
-    project-app-network:
+    coworking-space-app-network:
         driver: bridge
 
 # Volumes

@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 func init() {
 	Register(Migration{
-		Version: 1,
+		Version: 2,
 		Name:    "create_vendor_table",
 		Up: func(db *gorm.DB) error {
 			return db.Exec(`

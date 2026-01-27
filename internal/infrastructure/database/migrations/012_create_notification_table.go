@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 func init() {
 	Register(Migration{
-		Version: 1,
+		Version: 12,
 		Name:    "create_notification_table",
 		Up: func(db *gorm.DB) error {
 			return db.Exec(`
@@ -29,7 +29,7 @@ func init() {
 
 			        CONSTRAINT fk_notification_user
 			            FOREIGN KEY (user_id)
-			            REFERENCES users(id)
+			            REFERENCES users(user_id)
 			            ON DELETE CASCADE,
 
 			        -- Check Constraints

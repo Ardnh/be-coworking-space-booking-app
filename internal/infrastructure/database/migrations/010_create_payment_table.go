@@ -4,14 +4,14 @@ import "gorm.io/gorm"
 
 func init() {
 	Register(Migration{
-		Version: 1,
+		Version: 10,
 		Name:    "create_payment_table",
 		Up: func(db *gorm.DB) error {
 			return db.Exec(`
 			    CREATE TABLE IF NOT EXISTS payments (
 			        payment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			        booking_id UUID NOT NULL,
-			        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+			        user_id INTEGER NOT NULL,
 			        amount DECIMAL(10, 2) NOT NULL,
 			        payment_method VARCHAR(50) NOT NULL,
 			        payment_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -5,10 +5,10 @@ import (
 )
 
 type Response struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
-	Error   any    `json:"error,omitempty"`
+	Success bool `json:"success"`
+	Message any  `json:"message"`
+	Data    any  `json:"data,omitempty"`
+	Error   any  `json:"error,omitempty"`
 }
 
 type ResponseWithPagination struct {
@@ -38,6 +38,7 @@ func NewSuccessResponse(c *fiber.Ctx, statusCode int, message string, data inter
 }
 
 func NewSuccessResponseWithPagination(c *fiber.Ctx, statusCode int, message string, data interface{}, pagination interface{}) error {
+
 	return c.Status(statusCode).JSON(ResponseWithPagination{
 		Success:    true,
 		Message:    message,
@@ -47,7 +48,7 @@ func NewSuccessResponseWithPagination(c *fiber.Ctx, statusCode int, message stri
 }
 
 // Error response
-func NewErrorResponse(c *fiber.Ctx, statusCode int, message string, err interface{}) error {
+func NewErrorResponse(c *fiber.Ctx, statusCode int, message any, err interface{}) error {
 
 	return c.Status(statusCode).JSON(Response{
 		Success: false,

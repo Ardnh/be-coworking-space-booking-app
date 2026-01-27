@@ -4,14 +4,14 @@ import "gorm.io/gorm"
 
 func init() {
 	Register(Migration{
-		Version: 1,
+		Version: 11,
 		Name:    "create_booking_history_table",
 		Up: func(db *gorm.DB) error {
 			return db.Exec(`
 			    CREATE TABLE IF NOT EXISTS booking_history (
 			        history_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			        booking_id UUID NOT NULL,
-			        user_id INTEGER NOT NULL,
+			        user_id UUID NOT NULL,
 			        old_status VARCHAR(255) NOT NULL,
 			        new_status VARCHAR(255) NOT NULL,
 			        changed_by UUID NOT NULL,
@@ -27,12 +27,12 @@ func init() {
 
 			        CONSTRAINT fk_history_user
 			            FOREIGN KEY (user_id)
-			            REFERENCES users(id)
+			            REFERENCES users(user_id)
 			            ON DELETE RESTRICT,
 
 			        CONSTRAINT fk_history_changed_by
 			            FOREIGN KEY (changed_by)
-			            REFERENCES users(id)
+			            REFERENCES users(user_id)
 			            ON DELETE RESTRICT,
 
 			        -- Check Constraints

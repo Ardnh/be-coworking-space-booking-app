@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 func init() {
 	Register(Migration{
-		Version: 1,
+		Version: 5,
 		Name:    "create_pricing_rules_table",
 		Up: func(db *gorm.DB) error {
 			return db.Exec(`

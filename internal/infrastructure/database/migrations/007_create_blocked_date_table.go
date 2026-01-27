@@ -6,7 +6,7 @@ import (
 
 func init() {
 	Register(Migration{
-		Version: 1,
+		Version: 7,
 		Name:    "create_blocked_date_table",
 		Up: func(db *gorm.DB) error {
 			return db.Exec(`

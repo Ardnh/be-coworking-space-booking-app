@@ -6,21 +6,26 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/application/dto"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/services"
 	http "github.com/Ardnh/be-coworking-space-booking-app/internal/interfaces/http/responses"
+	validation_utils "github.com/Ardnh/be-coworking-space-booking-app/internal/utils/validator"
 )
 
 type UserHandlers struct {
 	userService services.UserService
 	validator   *validator.Validate
+	log         *logrus.Logger
 }
 
-func NewAuthHandlers(userService services.UserService, validator *validator.Validate) *UserHandlers {
+func NewUserHandlers(userService services.UserService, validator *validator.Validate, log *logrus.Logger) *UserHandlers {
 	return &UserHandlers{
 		userService: userService,
 		validator:   validator,
+		log:         log,
 	}
 }
 
@@ -81,8 +86,8 @@ func (h *UserHandlers) GetAllUser(c *fiber.Ctx) error {
 		PageSize:    limit,
 		TotalItems:  totalItems,
 		TotalPages:  totalItems / limit,
-		HasNext:     true,
-		HasPrevious: false,
+		HasNext:     totalItems > limit*pageInt,
+		HasPrevious: pageInt > 1,
 	}
 
 	return http.NewSuccessResponseWithPagination(c, fiber.StatusOK, "Successfully retrieved users", users, pagination)
@@ -90,12 +95,68 @@ func (h *UserHandlers) GetAllUser(c *fiber.Ctx) error {
 
 func (h *UserHandlers) CreateUser(c *fiber.Ctx) error {
 
+	var req dto.CreateUserDto
+	if err := c.BodyParser(&req); err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	if err := h.validator.Struct(&req); err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, validation_utils.FormatValidationErrors(err), nil)
+	}
+
+	err := h.userService.CreateUser(c.Context(), &req)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusConflict, err.Error(), nil)
+	}
+
+	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully created user", nil)
 }
 
 func (h *UserHandlers) UpdateUser(c *fiber.Ctx) error {
 
+	id := c.Params("id", "")
+	if id == "" {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
+	}
+
+	var req dto.UpdateUserDto
+	if err := c.BodyParser(&req); err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	if err := h.validator.Struct(&req); err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, validation_utils.FormatValidationErrors(err), nil)
+	}
+
+	parsedId, err := uuid.Parse(id)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	errUpdate := h.userService.UpdateUser(c.Context(), parsedId, &req)
+	if errUpdate != nil {
+		return http.NewErrorResponse(c, fiber.StatusConflict, err.Error(), nil)
+	}
+
+	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully updated user", nil)
 }
 
 func (h *UserHandlers) DeleteUser(c *fiber.Ctx) error {
 
+	id := c.Params("id", "")
+	if id == "" {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
+	}
+
+	parsedId, err := uuid.Parse(id)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	errDelete := h.userService.DeleteUser(c.Context(), parsedId)
+	if errDelete != nil {
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+	}
+
+	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully deleted user", nil)
 }

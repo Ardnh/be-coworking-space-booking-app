@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/application/dto"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/application/mapper"
@@ -45,7 +46,13 @@ func (s *UserServiceImpl) GetAllUsers(ctx context.Context, userParams *dto.GetUs
 // User Type Customer
 func (s *UserServiceImpl) CreateUser(ctx context.Context, user *dto.CreateUserDto) error {
 
-	// convert to entities
+	// Conver to entities
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	userPassword := string(hashedPassword)
+	user.Password = userPassword
 	userEntity := mapper.CreateUserDtoToDomain(user)
 	return s.repo.CreateUser(ctx, &userEntity)
 }
@@ -59,7 +66,7 @@ func (s *UserServiceImpl) UpdateUser(ctx context.Context, userID uuid.UUID, user
 }
 
 // User Type Admin
-func (s *UserServiceImpl) DeleteUser(ctx context.Context, userID string) error {
+func (s *UserServiceImpl) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 
 	return s.repo.DeleteUser(ctx, userID)
 }
