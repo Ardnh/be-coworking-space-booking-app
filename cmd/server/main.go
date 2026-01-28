@@ -26,13 +26,11 @@ func main() {
 	log.Println("📝 TODO: Implement application bootstrap")
 	log.Println("💡 See cmd/README.md for implementation guidance")
 
-	// ✅ Get working directory untuk build path yang benar
 	workDir, err := os.Getwd()
 	if err != nil {
 		log.Fatal("Failed to get working directory:", err)
 	}
 
-	// ✅ Build absolute path untuk config files
 	modelPath := filepath.Join(workDir, "internal/config", "casbin_model.conf")
 	policyPath := filepath.Join(workDir, "internal/config", "casbin_policy.csv")
 
@@ -69,14 +67,17 @@ func main() {
 	// Repository
 	userRepository := repository.NewUsersRepository(db, redisDb)
 	authRepository := repository.NewAuthRepository(db, redisDb)
+	vendorRepository := repository.NewVendorRepository(db, redisDb)
 
 	// Service
 	userService := service.NewUserService(userRepository)
 	authService := service.NewAuthService(authRepository)
+	vendorService := service.NewVendorService(vendorRepository)
 
 	// Handler
 	userHandler := handlers.NewUserHandlers(userService, validator, logger)
 	authHandler := handlers.NewAuthHandlers(authService, userService, validator, logger)
+	vendorHandler := handlers.NewVendorHandlers(vendorService, validator, logger)
 
 	// Routes
 	routes.SetupAPIRoutes(
@@ -85,6 +86,7 @@ func main() {
 		enforcer,
 		userHandler,
 		authHandler,
+		vendorHandler,
 	)
 
 	app.Get("/health", func(c *fiber.Ctx) error {
