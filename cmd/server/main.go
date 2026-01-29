@@ -89,13 +89,6 @@ func main() {
 		vendorHandler,
 	)
 
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"success": true,
-			"message": "service is healty",
-		})
-	})
-
 	portListen := fmt.Sprintf(":%s", cfg.App.Port)
 	if err := app.Listen(portListen); err != nil {
 		log.Fatalf("❌ Failed to start server: %v", err)

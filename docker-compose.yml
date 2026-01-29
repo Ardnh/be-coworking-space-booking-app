@@ -32,7 +32,7 @@ services:
     # PostgreSQL Database
     postgres:
         image: postgres:17-alpine
-        container_name: postgres_db
+        container_name: coworking_space_app_postgres_db
         ports:
             - "5432:5432"
         environment:
@@ -53,7 +53,7 @@ services:
     # Redis Cache
     redis:
         image: redis:alpine3.22
-        container_name: redis_cache
+        container_name: coworking_space_app_redis_cache
         command: redis-server --appendonly yes
         volumes:
             - redis_data:/data

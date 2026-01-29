@@ -17,6 +17,17 @@ body:json {
   }
 }
 
+script:post-response {
+  const response = res.getBody();
+  
+  // Ambil token dari response
+  const token = response.data.token;
+  
+  // Simpan token ke environment
+  bru.setEnvVar("token", token);
+  
+}
+
 settings {
   encodeUrl: true
   timeout: 0

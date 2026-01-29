@@ -24,6 +24,13 @@ func SetupAPIRoutes(
 	// API v1 group
 	api := app.Group("/api/v1")
 
+	api.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"success": true,
+			"message": "service is healty",
+		})
+	})
+
 	// Public routes
 	public := api.Group("/")
 	{
