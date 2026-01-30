@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/entities"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/repositories"
@@ -22,37 +23,140 @@ func NewVendorRepository(db *gorm.DB, redis *redis.Client) repositories.VendorRe
 	}
 }
 
-func (r *VendorRepositoryImpl) GetAllVendors(ctx context.Context, vendorName string, city string, limit int, offset int, sortBy string, sortOrder string) ([]*entities.Vendor, error) {
+func (r *VendorRepositoryImpl) GetAllVendors(ctx context.Context, vendorName string, city string, limit int, offset int, sortBy string, sortOrder string) ([]*entities.Vendor, int64, error) {
 
-	return nil, nil
+	var vendor []*entities.Vendor
+	var total int64 = 0
+
+	baseQuery := r.db.WithContext(ctx).Model(&entities.Vendor{})
+
+	if vendorName != "" {
+		baseQuery = baseQuery.Where("name LIKE ?", "%"+vendorName+"%")
+	}
+
+	if city != "" {
+		baseQuery = baseQuery.Where("city = ?", city)
+	}
+
+	if limit > 0 {
+		baseQuery = baseQuery.Limit(limit)
+	}
+
+	if offset > 0 {
+		baseQuery = baseQuery.Offset(offset)
+	}
+
+	if sortBy != "" {
+		baseQuery = baseQuery.Order(sortBy + " " + sortOrder)
+	}
+
+	if err := baseQuery.Find(&vendor).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := baseQuery.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return vendor, total, nil
 }
 
 func (r *VendorRepositoryImpl) GetVendorByID(ctx context.Context, vendorID uuid.UUID) (*entities.Vendor, error) {
 
-	return nil, nil
+	var vendor entities.Vendor
+	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Where("id = ?", vendor.VendorID).First(&vendor).Error; err != nil {
+		return nil, err
+	}
+
+	if &vendor == nil {
+		return nil, errors.New("vendor not found")
+	}
+
+	return &vendor, nil
 }
 
 func (r *VendorRepositoryImpl) GetVendorsResourcesByVendorID(ctx context.Context, vendorID uuid.UUID) ([]*entities.Resource, error) {
 
-	return nil, nil
+	var isVendorExists bool
+	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Where("id = ?", vendorID).First(&isVendorExists).Error; err != nil {
+		return nil, err
+	}
+
+	if !isVendorExists {
+		return nil, errors.New("vendor not found")
+	}
+
+	var vendorResources []*entities.Resource
+	if err := r.db.WithContext(ctx).Model(&entities.Resource{}).Where("vendor_id = ?", vendorID).Find(&vendorResources).Error; err != nil {
+		return nil, err
+	}
+
+	return vendorResources, nil
 }
 
-func (r *VendorRepositoryImpl) GetVendorReviews(ctx context.Context, vendorID uuid.UUID) ([]*entities.Review, error) {
+// func (r *VendorRepositoryImpl) GetVendorReviews(ctx context.Context, vendorID uuid.UUID) ([]*entities.Review, error) {
 
-	return nil, nil
+// 	return nil, nil
+// }
+
+func (r *VendorRepositoryImpl) CreateVendor(ctx context.Context, vendor *entities.Vendor) (*entities.Vendor, error) {
+
+	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Create(&vendor).Error; err != nil {
+		return nil, err
+	}
+
+	return vendor, nil
 }
 
-func (r *VendorRepositoryImpl) CreateVendor(ctx context.Context, vendor *entities.Vendor) error {
+func (r *VendorRepositoryImpl) UpdateVendor(ctx context.Context, vendor *entities.Vendor) (*entities.Vendor, error) {
 
-	return nil
-}
+	var isVendorExists bool
+	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Where("id = ?", vendor.VendorID).First(&isVendorExists).Error; err != nil {
+		return nil, err
+	}
 
-func (r *VendorRepositoryImpl) UpdateVendor(ctx context.Context, vendor *entities.Vendor) error {
+	if !isVendorExists {
+		return nil, errors.New("vendor not found")
+	}
 
-	return nil
+	result := r.db.WithContext(ctx).Updates(vendor)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	var updatedVendor entities.Vendor
+	err := r.db.
+		WithContext(ctx).
+		Model(&entities.Vendor{}).
+		Where("id = ?", vendor.VendorID).
+		First(&updatedVendor).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &updatedVendor, nil
 }
 
 func (r *VendorRepositoryImpl) DeleteVendor(ctx context.Context, vendorID uuid.UUID) error {
+
+	var isVendorExists bool
+	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Where("id = ?", vendorID).First(&isVendorExists).Error; err != nil {
+		return err
+	}
+
+	if !isVendorExists {
+		return errors.New("vendor not found")
+	}
+
+	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Where("id = ?", vendorID).Delete(&entities.Vendor{}).Error; err != nil {
+		return err
+	}
 
 	return nil
 }

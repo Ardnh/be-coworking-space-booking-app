@@ -24,40 +24,60 @@ func NewUsersRepository(db *gorm.DB, redis *redis.Client) repositories.UsersRepo
 	}
 }
 
-func (r *userRepositoryImpl) GetAllUsers(ctx context.Context, usernameQuery string, emailQuery string, fullNameQuery string, limit int, offset int, sortBy string, sortOrder string) ([]*entities.Users, int, error) {
+func (r *userRepositoryImpl) GetAllUsers(
+	ctx context.Context,
+	usernameQuery string,
+	emailQuery string,
+	fullNameQuery string,
+	limit int,
+	offset int,
+	sortBy string,
+	sortOrder string,
+) ([]*entities.Users, int, error) {
 
 	var users []*entities.Users
+	var total int64
 
-	query := r.db.WithContext(ctx).Table("users u")
+	baseQuery := r.db.WithContext(ctx).Table("users u")
 
 	// Search filter
 	if usernameQuery != "" {
-		searchPattern := "%" + usernameQuery + "%"
-		query = query.Where("u.username LIKE ?", searchPattern)
+		baseQuery = baseQuery.Where("u.username LIKE ?", "%"+usernameQuery+"%")
 	}
 	if emailQuery != "" {
-		searchPattern := "%" + emailQuery + "%"
-		query = query.Where("u.email LIKE ?", searchPattern)
+		baseQuery = baseQuery.Where("u.email LIKE ?", "%"+emailQuery+"%")
 	}
 	if fullNameQuery != "" {
-		searchPattern := "%" + fullNameQuery + "%"
-		query = query.Where("u.full_name LIKE ?", searchPattern)
+		baseQuery = baseQuery.Where("u.full_name LIKE ?", "%"+fullNameQuery+"%")
 	}
 
-	// Pagination
-	query = query.Limit(limit).Offset(offset)
-
-	// Sorting
-	if sortBy != "" {
-		query = query.Order(sortBy + " " + sortOrder)
-	}
-
-	if err := query.Find(&users).Error; err != nil {
+	if err := baseQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	var total int64 = 0
-	if err := query.Count(&total).Error; err != nil {
+	// Sorting (whitelist)
+	allowedSort := map[string]bool{
+		"username":   true,
+		"email":      true,
+		"full_name":  true,
+		"created_at": true,
+	}
+
+	if allowedSort[sortBy] {
+		order := "ASC"
+		if sortOrder == "desc" {
+			order = "DESC"
+		}
+		baseQuery = baseQuery.Order(sortBy + " " + order)
+	}
+
+	// Pagination
+	if limit > 0 {
+		baseQuery = baseQuery.Limit(limit).Offset(offset)
+	}
+
+	// Fetch data
+	if err := baseQuery.Find(&users).Error; err != nil {
 		return nil, 0, err
 	}
 
