@@ -135,7 +135,7 @@ func (h *UserHandlers) UpdateUser(c *fiber.Ctx) error {
 
 	errUpdate := h.userService.UpdateUser(c.Context(), parsedId, &req)
 	if errUpdate != nil {
-		return http.NewErrorResponse(c, fiber.StatusConflict, err.Error(), nil)
+		return http.NewErrorResponse(c, fiber.StatusConflict, errUpdate.Error(), nil)
 	}
 
 	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully updated user", nil)
@@ -155,7 +155,7 @@ func (h *UserHandlers) DeleteUser(c *fiber.Ctx) error {
 
 	errDelete := h.userService.DeleteUser(c.Context(), parsedId)
 	if errDelete != nil {
-		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, errDelete.Error(), nil)
 	}
 
 	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully deleted user", nil)

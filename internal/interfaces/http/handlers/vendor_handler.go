@@ -1,10 +1,16 @@
 package handlers
 
 import (
+	"strconv"
+	"strings"
+
+	"github.com/Ardnh/be-coworking-space-booking-app/internal/application/dto"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/services"
 	http "github.com/Ardnh/be-coworking-space-booking-app/internal/interfaces/http/responses"
+	validation_utils "github.com/Ardnh/be-coworking-space-booking-app/internal/utils/validator"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,26 +28,176 @@ func NewVendorHandlers(vendorService services.VendorService, validator *validato
 	}
 }
 
-func (s *VendorHandlers) GetAllVendors(c *fiber.Ctx) error {
-	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully created user", nil)
+func (h *VendorHandlers) GetAllVendors(c *fiber.Ctx) error {
+
+	// 1. Parse query parameters dengan default values
+	limit, err := strconv.Atoi(c.Query("limit", "10"))
+	if err != nil || limit <= 0 {
+		limit = 10
+	}
+	if limit > 50 {
+		limit = 50
+	}
+
+	// 2. Parse query parameters page
+	pageStr := c.Query("page", "1")
+	pageInt := 1
+	if pageStr != "" {
+		page, err := strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			pageInt = 1
+		} else {
+			pageInt = page
+		}
+	}
+
+	sortBy := c.Query("sort_by", "created_at")
+	sortOrder := c.Query("sort_order", "DESC")
+
+	// Validate sortOrder
+	sortOrder = strings.ToUpper(sortOrder)
+	if sortOrder != "ASC" && sortOrder != "DESC" {
+		sortOrder = "DESC"
+	}
+
+	// 3. Optional: Get additional filters
+	name := c.Query("name", "")
+	city := c.Query("city", "")
+	minRatingStr := c.Query("min_rating", "")
+	searchQuery := c.Query("search", "")
+
+	var minRating float64
+	if minRatingStr != "" {
+		parsed, err := strconv.ParseFloat(minRatingStr, 64)
+		if err != nil {
+			return http.NewErrorResponse(c, fiber.StatusBadRequest, "min_rating must be a number", nil)
+		}
+		minRating = parsed
+	}
+
+	params := dto.VendorFilterRequest{
+		Name:          name,
+		City:          city,
+		MinRating:     &minRating,
+		SearchQuery:   searchQuery,
+		Page:          pageInt,
+		PageSize:      limit,
+		SortBy:        sortBy,
+		SortDirection: sortOrder,
+	}
+
+	result, err := h.vendorService.GetAllVendors(c.Context(), params)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusNotFound, err.Error(), nil)
+	}
+
+	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully retrieved vendors", result)
 }
 
-func (s *VendorHandlers) GetVendorByID(c *fiber.Ctx) error {
-	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully created user", nil)
+func (h *VendorHandlers) GetVendorByID(c *fiber.Ctx) error {
+
+	id := c.Params("id", "")
+	if id == "" {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
+	}
+
+	vendorIdUUID, err := uuid.Parse(id)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+	}
+
+	result, err := h.vendorService.GetVendorByID(c.Context(), vendorIdUUID)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+	}
+
+	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully get vendor", result)
 }
 
-func (s *VendorHandlers) GetVendorsResourcesByVendorID(c *fiber.Ctx) error {
-	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully created user", nil)
+func (h *VendorHandlers) GetVendorsResourcesByVendorID(c *fiber.Ctx) error {
+
+	id := c.Params("vendor_id", "")
+	if id == "" {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
+	}
+
+	vendorIdUUID, err := uuid.Parse(id)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+	}
+
+	result, err := h.vendorService.GetVendorsResourcesByVendorID(c.Context(), vendorIdUUID)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+	}
+
+	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully get vendor resources", result)
 }
 
-func (s *VendorHandlers) CreateVendor(c *fiber.Ctx) error {
-	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully created user", nil)
+func (h *VendorHandlers) CreateVendor(c *fiber.Ctx) error {
+
+	var req dto.CreateVendorRequestDto
+	if err := c.BodyParser(&req); err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	if err := h.validator.Struct(&req); err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, validation_utils.FormatValidationErrors(err), nil)
+	}
+
+	result, err := h.vendorService.CreateVendor(c.Context(), &req)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+	}
+
+	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully created vendor", result)
 }
 
-func (s *VendorHandlers) UpdateVendor(c *fiber.Ctx) error {
-	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully created user", nil)
+func (h *VendorHandlers) UpdateVendor(c *fiber.Ctx) error {
+
+	id := c.Params("id", "")
+	if id == "" {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
+	}
+
+	var req dto.UpdateVendorRequestDto
+	if err := c.BodyParser(&req); err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	if err := h.validator.Struct(&req); err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, validation_utils.FormatValidationErrors(err), nil)
+	}
+
+	vendorIdUUID, err := uuid.Parse(id)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+	}
+
+	result, err := h.vendorService.UpdateVendor(c.Context(), vendorIdUUID, &req)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+	}
+
+	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully update vendor", result)
 }
 
-func (s *VendorHandlers) DeleteVendor(c *fiber.Ctx) error {
-	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully created user", nil)
+func (h *VendorHandlers) DeleteVendor(c *fiber.Ctx) error {
+
+	id := c.Params("id", "")
+	if id == "" {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
+	}
+
+	vendorIdUUID, err := uuid.Parse(id)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+	}
+
+	errDelete := h.vendorService.DeleteVendor(c.Context(), vendorIdUUID)
+	if errDelete != nil {
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, errDelete.Error(), nil)
+	}
+
+	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully delete vendor", nil)
 }

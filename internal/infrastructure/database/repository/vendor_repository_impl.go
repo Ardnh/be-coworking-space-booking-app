@@ -68,10 +68,6 @@ func (r *VendorRepositoryImpl) GetVendorByID(ctx context.Context, vendorID uuid.
 		return nil, err
 	}
 
-	if &vendor == nil {
-		return nil, errors.New("vendor not found")
-	}
-
 	return &vendor, nil
 }
 

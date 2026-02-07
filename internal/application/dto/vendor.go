@@ -54,15 +54,13 @@ type UpdateVendorStatusRequestDto struct {
 
 // VendorFilterRequest - DTO untuk filter vendors
 type VendorFilterRequest struct {
-	Name          string  `json:"name,omitempty"`
-	City          string  `json:"city,omitempty"`
-	Status        string  `json:"status,omitempty" validate:"omitempty,oneof=active inactive"`
-	MinRating     float64 `json:"min_rating,omitempty" validate:"omitempty,gte=0,lte=5"`
-	SearchQuery   string  `json:"search_query,omitempty"`
-	Page          int     `json:"page,omitempty" validate:"omitempty,min=1"`
-	PageSize      int     `json:"page_size,omitempty" validate:"omitempty,min=1,max=100"`
-	Limit         int     `json:"limit,omitempty" validate:"omitempty,min=1,max=100"`
-	Offset        int     `json:"offset,omitempty" validate:"omitempty,min=0"`
-	SortBy        string  `json:"sort_by,omitempty" validate:"omitempty,oneof=name rating created_at"`
-	SortDirection string  `json:"sort_direction,omitempty" validate:"omitempty,oneof=asc desc"`
+	Name          string   `json:"name,omitempty"`
+	City          string   `json:"city,omitempty"`
+	MinRating     *float64 `json:"min_rating,omitempty" validate:"omitempty,gte=0,lte=5"`
+	SearchQuery   string   `json:"search_query,omitempty"`
+	Page          int      `json:"page,omitempty" validate:"omitempty,min=1"`
+	PageSize      int      `json:"page_size,omitempty" validate:"omitempty,min=1,max=100"`
+	Offset        int      `json:"offset,omitempty" validate:"omitempty,min=0"`
+	SortBy        string   `json:"sort_by,omitempty" validate:"omitempty,oneof=name rating created_at"`
+	SortDirection string   `json:"sort_direction,omitempty" validate:"omitempty,oneof=asc desc"`
 }

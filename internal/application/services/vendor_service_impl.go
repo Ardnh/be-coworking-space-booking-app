@@ -21,14 +21,14 @@ func NewVendorService(repo repositories.VendorRepository) services.VendorService
 	}
 }
 
-func (s *VendorServiceImpl) GetAllVendors(ctx context.Context, params dto.VendorFilterRequest) (*dto.VendorListResponse, error) {
+func (s *VendorServiceImpl) GetAllVendors(ctx context.Context, params dto.VendorFilterRequest) (*dto.VendorListResponseDto, error) {
 
-	vendors, total, err := s.repo.GetAllVendors(ctx, params.Name, params.City, params.Limit, params.Offset, params.SortBy, params.SortDirection)
+	vendors, total, err := s.repo.GetAllVendors(ctx, params.Name, params.City, params.PageSize, params.Offset, params.SortBy, params.SortDirection)
 	if err != nil {
 		return nil, err
 	}
 
-	totalPages := int(total / int64(params.Limit))
+	totalPages := int(total / int64(params.PageSize))
 	pageSize := params.PageSize
 	page := params.Page
 
@@ -55,7 +55,6 @@ func (s *VendorServiceImpl) GetVendorsResourcesByVendorID(ctx context.Context, v
 	}
 
 	resultDto := mapper.ToVendorResourceListDto(result)
-
 	return resultDto, nil
 }
 
