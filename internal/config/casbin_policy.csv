@@ -2,7 +2,8 @@
 p, anonymous, /api/register, POST
 p, anonymous, /api/login, POST
 
-p, admin, /api/users, GET
-p, admin, /api/users, POST
-p, admin, /api/users/:id, PUT
-p, admin, /api/users/:id, DELETE
+# Private endpoints - Hanya bisa di akses oleh "ADMIN"
+p, admin, /api/v1/users, GET
+p, admin, /api/v1/users, POST
+p, admin, /api/v1/users/:id, PUT
+p, admin, /api/v1/users/:id, DELETE

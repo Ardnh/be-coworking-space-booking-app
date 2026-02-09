@@ -58,8 +58,8 @@ func (am *AuthMiddleware) Authenticate() fiber.Handler {
 			}
 
 			// Store user info in context
-			c.Locals("userID", claims["user_id"])
-			c.Locals("userType", claims["user_type"])
+			c.Locals("user_id", claims["user_id"])
+			c.Locals("user_type", claims["user_type"])
 			return c.Next()
 		}
 

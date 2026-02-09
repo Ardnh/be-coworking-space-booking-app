@@ -44,7 +44,7 @@ func SetupAPIRoutes(
 	{
 		// User Routes
 		users := protected.Group("/users")
-		users.Get("/user", casbinMiddleware.Authorize(), userHandler.GetAllUser)
+		users.Get("/", casbinMiddleware.Authorize(), userHandler.GetAllUser)
 		users.Post("/user", casbinMiddleware.Authorize(), userHandler.CreateUser)
 		users.Put("/user/:id", casbinMiddleware.Authorize(), userHandler.UpdateUser)
 		users.Delete("/user/:id", casbinMiddleware.Authorize(), userHandler.DeleteUser)
@@ -53,6 +53,7 @@ func SetupAPIRoutes(
 		vendor := protected.Group("/vendors")
 		vendor.Get("/", casbinMiddleware.Authorize(), vendorHandler.GetAllVendors)
 		vendor.Get("/:vendorId", casbinMiddleware.Authorize(), vendorHandler.GetVendorByID)
+		vendor.Get("/:vendorId/resources", casbinMiddleware.Authorize(), vendorHandler.GetVendorsResourcesByVendorID)
 		vendor.Post("/", casbinMiddleware.Authorize(), vendorHandler.CreateVendor)
 		vendor.Put("/:id", casbinMiddleware.Authorize(), vendorHandler.UpdateVendor)
 		vendor.Delete("/:id", casbinMiddleware.Authorize(), vendorHandler.DeleteVendor)

@@ -25,16 +25,9 @@ func (m *CasbinMiddleware) Authorize() fiber.Handler {
 
 		// Convert ke string
 		// admin, customer, vendor, atau staff
-		var subject string
-		if userType == nil {
-			// Jika tidak ada user (belum login), gunakan "anonymous"
-			subject = "anonymous"
-		} else {
-			subject = userType.(string)
-		}
-
-		object := c.Path()   // /api/users/:id
-		action := c.Method() // GET, POST, PUT, DELETE
+		subject := userType.(string)
+		object := c.Path()
+		action := c.Method()
 
 		// Enforce policy
 		allowed, err := m.enforcer.Enforce(subject, object, action)
