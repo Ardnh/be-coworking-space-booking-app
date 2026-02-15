@@ -9,6 +9,7 @@ import (
 
 type UsersRepository interface {
 	GetAllUsers(ctx context.Context, usernameQuery string, emailQuery string, fullNameQuery string, limit int, offset int, sortBy string, sortOrder string) ([]*entities.Users, int, error)
+	GetUserById(ctx context.Context, userId uuid.UUID) (*entities.Users, error)
 	CreateUser(ctx context.Context, user *entities.Users) error
 	UpdateUser(ctx context.Context, user *entities.Users) error
 	DeleteUser(ctx context.Context, userID uuid.UUID) error

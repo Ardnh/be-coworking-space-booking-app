@@ -22,6 +22,17 @@ func NewUserService(repo repositories.UsersRepository) services.UserService {
 	}
 }
 
+func (s *UserServiceImpl) GetUserById(ctx context.Context, userId uuid.UUID) (*dto.UserDto, error) {
+
+	user, err := s.repo.GetUserById(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	userDto := mapper.UserEntityToDto(user)
+	return userDto, err
+}
+
 // User Type Admin & Vendor
 func (s *UserServiceImpl) GetAllUsers(ctx context.Context, userParams *dto.GetUserParams) ([]*dto.UserDto, int, error) {
 	users, totalItems, err := s.repo.GetAllUsers(

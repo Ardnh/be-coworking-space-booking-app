@@ -23,7 +23,7 @@ func NewVendorRepository(db *gorm.DB, redis *redis.Client) repositories.VendorRe
 	}
 }
 
-func (r *VendorRepositoryImpl) GetAllVendors(ctx context.Context, vendorName string, city string, limit int, offset int, sortBy string, sortOrder string) ([]*entities.Vendor, int64, error) {
+func (r *VendorRepositoryImpl) GetAllVendors(ctx context.Context, vendorName string, city string, limit int, offset int, sortBy string, sortOrder string) ([]*entities.Vendor, int, error) {
 
 	var vendor []*entities.Vendor
 	var total int64 = 0
@@ -58,13 +58,13 @@ func (r *VendorRepositoryImpl) GetAllVendors(ctx context.Context, vendorName str
 		return nil, 0, err
 	}
 
-	return vendor, total, nil
+	return vendor, int(total), nil
 }
 
 func (r *VendorRepositoryImpl) GetVendorByID(ctx context.Context, vendorID uuid.UUID) (*entities.Vendor, error) {
 
 	var vendor entities.Vendor
-	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Where("id = ?", vendor.VendorID).First(&vendor).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Where("vendor_id = ?", vendorID).First(&vendor).Error; err != nil {
 		return nil, err
 	}
 
@@ -106,16 +106,10 @@ func (r *VendorRepositoryImpl) CreateVendor(ctx context.Context, vendor *entitie
 
 func (r *VendorRepositoryImpl) UpdateVendor(ctx context.Context, vendor *entities.Vendor) (*entities.Vendor, error) {
 
-	var isVendorExists bool
-	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Where("id = ?", vendor.VendorID).First(&isVendorExists).Error; err != nil {
-		return nil, err
-	}
-
-	if !isVendorExists {
-		return nil, errors.New("vendor not found")
-	}
-
-	result := r.db.WithContext(ctx).Updates(vendor)
+	result := r.db.WithContext(ctx).
+		Model(&entities.Vendor{}).
+		Where("vendor_id = ?", vendor.VendorID).
+		Updates(vendor)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -126,10 +120,8 @@ func (r *VendorRepositoryImpl) UpdateVendor(ctx context.Context, vendor *entitie
 	}
 
 	var updatedVendor entities.Vendor
-	err := r.db.
-		WithContext(ctx).
-		Model(&entities.Vendor{}).
-		Where("id = ?", vendor.VendorID).
+	err := r.db.WithContext(ctx).
+		Where("vendor_id = ?", vendor.VendorID).
 		First(&updatedVendor).Error
 
 	if err != nil {
@@ -141,17 +133,16 @@ func (r *VendorRepositoryImpl) UpdateVendor(ctx context.Context, vendor *entitie
 
 func (r *VendorRepositoryImpl) DeleteVendor(ctx context.Context, vendorID uuid.UUID) error {
 
-	var isVendorExists bool
-	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Where("id = ?", vendorID).First(&isVendorExists).Error; err != nil {
-		return err
+	result := r.db.WithContext(ctx).
+		Where("vendor_id = ?", vendorID).
+		Delete(&entities.Vendor{})
+
+	if result.Error != nil {
+		return result.Error
 	}
 
-	if !isVendorExists {
-		return errors.New("vendor not found")
-	}
-
-	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Where("id = ?", vendorID).Delete(&entities.Vendor{}).Error; err != nil {
-		return err
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
 	}
 
 	return nil

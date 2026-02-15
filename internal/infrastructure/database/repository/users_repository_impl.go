@@ -24,6 +24,24 @@ func NewUsersRepository(db *gorm.DB, redis *redis.Client) repositories.UsersRepo
 	}
 }
 
+func (r *userRepositoryImpl) GetUserById(ctx context.Context, userId uuid.UUID) (*entities.Users, error) {
+
+	var user entities.Users
+	err := r.db.WithContext(ctx).
+		Where("user_id = ?", userId).
+		First(&user).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func (r *userRepositoryImpl) GetAllUsers(
 	ctx context.Context,
 	usernameQuery string,

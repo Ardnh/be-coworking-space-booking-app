@@ -48,7 +48,7 @@ func NewSuccessResponseWithPagination(c *fiber.Ctx, statusCode int, message stri
 }
 
 // Error response
-func NewErrorResponse(c *fiber.Ctx, statusCode int, message any, err interface{}) error {
+func NewErrorResponse(c *fiber.Ctx, statusCode int, message any, err any) error {
 
 	return c.Status(statusCode).JSON(Response{
 		Success: false,

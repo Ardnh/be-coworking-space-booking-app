@@ -8,7 +8,7 @@ import (
 )
 
 type VendorService interface {
-	GetAllVendors(ctx context.Context, params dto.VendorFilterRequest) (*dto.VendorListResponseDto, error)
+	GetAllVendors(ctx context.Context, params dto.VendorFilterRequest) ([]dto.VendorResponseDto, int, error)
 	GetVendorByID(ctx context.Context, vendorID uuid.UUID) (*dto.VendorResponseDto, error)
 	GetVendorsResourcesByVendorID(ctx context.Context, vendorID uuid.UUID) ([]dto.ResourceResponseDto, error)
 	// GetVendorReviews(ctx context.Context, vendorID uuid.UUID) ([]*entities.Review, error)

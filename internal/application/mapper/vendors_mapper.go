@@ -5,16 +5,6 @@ import (
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/entities"
 )
 
-func ToVendorListResponse(vendor []*entities.Vendor, page int, pageSize int, totalPages int, total int64) *dto.VendorListResponseDto {
-	return &dto.VendorListResponseDto{
-		Vendors:   ToVendorListDto(vendor),
-		Total:     total,
-		Page:      page,
-		PageSize:  pageSize,
-		TotalPage: totalPages,
-	}
-}
-
 func ToVendorListDto(vendor []*entities.Vendor) []dto.VendorResponseDto {
 	var vendorsListDto []dto.VendorResponseDto
 	for _, v := range vendor {

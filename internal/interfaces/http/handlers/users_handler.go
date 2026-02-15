@@ -29,6 +29,37 @@ func NewUserHandlers(userService services.UserService, validator *validator.Vali
 	}
 }
 
+func (h *UserHandlers) GetUserByToken(c *fiber.Ctx) error {
+	userId := c.Locals("user_id")
+	if userId == nil {
+		return http.NewErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized", nil)
+	}
+
+	// cast ke string dengan aman
+	userIdStr, ok := userId.(string)
+	if !ok {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "Invalid user_id type", nil)
+	}
+
+	// parse UUID
+	userIdUUID, err := uuid.Parse(userIdStr)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	result, err := h.userService.GetUserById(c.Context(), userIdUUID)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+	}
+
+	return http.NewSuccessResponse(
+		c,
+		fiber.StatusOK,
+		"Successfully get user by token",
+		result,
+	)
+}
+
 func (h *UserHandlers) GetAllUser(c *fiber.Ctx) error {
 
 	// 1. Parse query parameters dengan default values

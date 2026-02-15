@@ -31,7 +31,7 @@ func NewVendorHandlers(vendorService services.VendorService, validator *validato
 func (h *VendorHandlers) GetAllVendors(c *fiber.Ctx) error {
 
 	// 1. Parse query parameters dengan default values
-	limit, err := strconv.Atoi(c.Query("limit", "10"))
+	limit, err := strconv.Atoi(c.Query("pageSize", "10"))
 	if err != nil || limit <= 0 {
 		limit = 10
 	}
@@ -86,12 +86,26 @@ func (h *VendorHandlers) GetAllVendors(c *fiber.Ctx) error {
 		SortDirection: sortOrder,
 	}
 
-	result, err := h.vendorService.GetAllVendors(c.Context(), params)
+	result, totalItems, err := h.vendorService.GetAllVendors(c.Context(), params)
 	if err != nil {
 		return http.NewErrorResponse(c, fiber.StatusNotFound, err.Error(), nil)
 	}
 
-	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully retrieved vendors", result)
+	totalPages := 0
+	if totalItems > 0 {
+		totalPages = (totalItems + limit - 1) / limit
+	}
+
+	pagination := http.Pagination{
+		CurrentPage: pageInt,
+		PageSize:    limit,
+		TotalItems:  totalItems,
+		TotalPages:  totalPages,
+		HasNext:     pageInt < totalPages,
+		HasPrevious: pageInt > 1,
+	}
+
+	return http.NewSuccessResponseWithPagination(c, fiber.StatusOK, "Successfully retrieved vendor", result, pagination)
 }
 
 func (h *VendorHandlers) GetVendorByID(c *fiber.Ctx) error {
@@ -123,7 +137,7 @@ func (h *VendorHandlers) GetVendorsResourcesByVendorID(c *fiber.Ctx) error {
 
 	vendorIdUUID, err := uuid.Parse(id)
 	if err != nil {
-		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
 	}
 
 	result, err := h.vendorService.GetVendorsResourcesByVendorID(c.Context(), vendorIdUUID)
@@ -138,11 +152,11 @@ func (h *VendorHandlers) CreateVendor(c *fiber.Ctx) error {
 
 	var req dto.CreateVendorRequestDto
 	if err := c.BodyParser(&req); err != nil {
-		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "Failed to create vendor", err.Error())
 	}
 
 	if err := h.validator.Struct(&req); err != nil {
-		return http.NewErrorResponse(c, fiber.StatusBadRequest, validation_utils.FormatValidationErrors(err), nil)
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "Failed to create vendor", validation_utils.FormatValidationErrors(err))
 	}
 
 	result, err := h.vendorService.CreateVendor(c.Context(), &req)
@@ -155,7 +169,7 @@ func (h *VendorHandlers) CreateVendor(c *fiber.Ctx) error {
 
 func (h *VendorHandlers) UpdateVendor(c *fiber.Ctx) error {
 
-	id := c.Params("id", "")
+	id := c.Params("vendorId", "")
 	if id == "" {
 		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
 	}
@@ -184,7 +198,7 @@ func (h *VendorHandlers) UpdateVendor(c *fiber.Ctx) error {
 
 func (h *VendorHandlers) DeleteVendor(c *fiber.Ctx) error {
 
-	id := c.Params("id", "")
+	id := c.Params("vendorId", "")
 	if id == "" {
 		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
 	}

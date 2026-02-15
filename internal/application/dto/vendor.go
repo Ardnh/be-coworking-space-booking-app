@@ -19,7 +19,7 @@ type VendorResponseDto struct {
 
 type VendorListResponseDto struct {
 	Vendors   []VendorResponseDto `json:"vendors"`
-	Total     int64               `json:"total"`
+	Total     int                 `json:"total"`
 	Page      int                 `json:"page"`
 	PageSize  int                 `json:"page_size"`
 	TotalPage int                 `json:"total_page"`
@@ -32,7 +32,7 @@ type CreateVendorRequestDto struct {
 	VendorName  string `json:"vendor_name" validate:"required,min=3,max=255"`
 	Address     string `json:"address" validate:"required,min=5,max=255"`
 	City        string `json:"city" validate:"required,min=2,max=255"`
-	PhoneNumber string `json:"phone_number" validate:"required,min=10,max=20,phone_number"`
+	PhoneNumber string `json:"phone_number" validate:"required,min=10,max=20"`
 	Email       string `json:"email" validate:"required,email,max=255"`
 	Description string `json:"description" validate:"required,min=10,max=2000"`
 }
@@ -42,7 +42,7 @@ type UpdateVendorRequestDto struct {
 	VendorName  *string `json:"vendor_name,omitempty" validate:"omitempty,min=3,max=255"`
 	Address     *string `json:"address,omitempty" validate:"omitempty,min=5,max=255"`
 	City        *string `json:"city,omitempty" validate:"omitempty,min=2,max=255"`
-	PhoneNumber *string `json:"phone_number,omitempty" validate:"omitempty,min=10,max=20,phone_number"`
+	PhoneNumber *string `json:"phone_number,omitempty" validate:"omitempty,min=10,max=20"`
 	Email       *string `json:"email,omitempty" validate:"omitempty,email,max=255"`
 	Description *string `json:"description,omitempty" validate:"omitempty,min=10,max=2000"`
 }

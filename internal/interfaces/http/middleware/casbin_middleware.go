@@ -23,8 +23,6 @@ func (m *CasbinMiddleware) Authorize() fiber.Handler {
 			return http.NewErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized", nil)
 		}
 
-		// Convert ke string
-		// admin, customer, vendor, atau staff
 		subject := userType.(string)
 		object := c.Path()
 		action := c.Method()
