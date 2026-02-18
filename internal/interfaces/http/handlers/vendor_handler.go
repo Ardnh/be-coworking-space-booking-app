@@ -28,6 +28,11 @@ func NewVendorHandlers(vendorService services.VendorService, validator *validato
 	}
 }
 
+func (h *VendorHandlers) GetVendorResourcesByVendorId(c *fiber.Ctx) error {
+
+	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully get vendor resources", nil)
+}
+
 func (h *VendorHandlers) GetAllVendors(c *fiber.Ctx) error {
 
 	// 1. Parse query parameters dengan default values
