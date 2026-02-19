@@ -15,6 +15,7 @@ func SetupAPIRoutes(
 	userHandler *handlers.UserHandlers,
 	authHandler *handlers.AuthHandlers,
 	vendorHandler *handlers.VendorHandlers,
+	resourcehandler *handlers.ResourceHandlers,
 ) {
 
 	// Middleware
@@ -58,6 +59,9 @@ func SetupAPIRoutes(
 		vendor.Post("/", casbinMiddleware.Authorize(), vendorHandler.CreateVendor)
 		vendor.Put("/:vendorId", casbinMiddleware.Authorize(), vendorHandler.UpdateVendor)
 		vendor.Delete("/:vendorId", casbinMiddleware.Authorize(), vendorHandler.DeleteVendor)
+
+		// Resource Routes
+		resources := protected.Group("/resource")
 	}
 
 }

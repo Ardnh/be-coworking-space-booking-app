@@ -68,16 +68,19 @@ func main() {
 	userRepository := repository.NewUsersRepository(db, redisDb)
 	authRepository := repository.NewAuthRepository(db, redisDb)
 	vendorRepository := repository.NewVendorRepository(db, redisDb)
+	resourceRepository := repository.NewResourceRespository(db, redisDb)
 
 	// Service
 	userService := service.NewUserService(userRepository)
 	authService := service.NewAuthService(authRepository)
 	vendorService := service.NewVendorService(vendorRepository)
+	resourceService := service.NewResourceService(resourceRepository)
 
 	// Handler
 	userHandler := handlers.NewUserHandlers(userService, validator, logger)
 	authHandler := handlers.NewAuthHandlers(authService, userService, validator, logger)
 	vendorHandler := handlers.NewVendorHandlers(vendorService, validator, logger)
+	resourcehandler := handlers.New
 
 	// Routes
 	routes.SetupAPIRoutes(
