@@ -12,8 +12,7 @@ func init() {
 			        resource_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			        vendor_id UUID NOT NULL,
 			        resource_name VARCHAR(255) NOT NULL,
-			        resource_type VARCHAR(255) NOT NULL,
-			        category_id UUID NOT NULL,
+			        resource_type_id UUID NOT NULL,
 			        description TEXT,
 			        capacity INT NOT NULL,
 			        price_per_unit DECIMAL(10, 2) NOT NULL,
@@ -25,10 +24,12 @@ func init() {
 			        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			        deleted_at TIMESTAMP DEFAULT NULL,
 			        FOREIGN KEY (vendor_id) REFERENCES vendors(vendor_id),
-			        FOREIGN KEY (category_id) REFERENCES categories(category_id)
+			        FOREIGN KEY (resource_type_id) REFERENCES resource_type(resource_type_id)
 			    );
-			    CREATE INDEX idx_resources_category_id ON resources(category_id);
-			    CREATE INDEX idx_resources_resource_name ON resources(resource_name);
+			    CREATE INDEX IF NOT EXISTS idx_resources_vendor_id ON resources(vendor_id);
+			    CREATE INDEX IF NOT EXISTS idx_resources_resource_type_id ON resources(resource_type_id);
+			    CREATE INDEX IF NOT EXISTS idx_resources_resource_name ON resources(resource_name);
+			    CREATE INDEX IF NOT EXISTS idx_resources_status ON resources(status);
 			`).Error
 		},
 		Down: func(db *gorm.DB) error {

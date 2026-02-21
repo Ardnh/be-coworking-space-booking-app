@@ -11,21 +11,20 @@ import (
 )
 
 type Resource struct {
-	ResourceID   uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	VendorID     uuid.UUID      `gorm:"type:uuid;not null;index"`
-	ResourceName string         `gorm:"type:varchar(255);not null;index:idx_resources_resource_name"`
-	ResourceType string         `gorm:"type:varchar(255);not null"`
-	CategoryID   uuid.UUID      `gorm:"type:uuid;not null;index:idx_resources_category_id"`
-	Description  *string        `gorm:"type:text"` // Nullable
-	Capacity     int            `gorm:"type:int;not null"`
-	PricePerUnit float64        `gorm:"type:decimal(10,2);not null"`
-	Images       ResourceImages `gorm:"type:jsonb"`        // Nullable JSONB
-	Location     *string        `gorm:"type:varchar(255)"` // Nullable
-	Status       string         `gorm:"type:varchar(20);not null;default:'active';check:status IN ('active','inactive')"`
+	ResourceID     uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	VendorID       uuid.UUID      `gorm:"type:uuid;not null;index"`
+	ResourceName   string         `gorm:"type:varchar(255);not null;index:idx_resources_resource_name"`
+	ResourceTypeID string         `gorm:"type:varchar(255);not null"`
+	Description    *string        `gorm:"type:text"`
+	Capacity       int            `gorm:"type:int;not null"`
+	PricePerUnit   float64        `gorm:"type:decimal(10,2);not null"`
+	Images         ResourceImages `gorm:"type:jsonb"`        // Nullable JSONB
+	Location       *string        `gorm:"type:varchar(255)"` // Nullable
+	Status         string         `gorm:"type:varchar(20);not null;default:'active';check:status IN ('active','inactive')"`
 
 	// Relationships
-	Vendor   *Vendor   `gorm:"foreignKey:VendorID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-	Category *Category `gorm:"foreignKey:CategoryID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Vendor       *Vendor       `gorm:"foreignKey:VendorID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	ResourceType *ResourceType `gorm:"foreignKey:ResourceTypeID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 
 	// Timestamps
 	CreatedAt time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP"`

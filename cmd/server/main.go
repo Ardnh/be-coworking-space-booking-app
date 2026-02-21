@@ -69,18 +69,21 @@ func main() {
 	authRepository := repository.NewAuthRepository(db, redisDb)
 	vendorRepository := repository.NewVendorRepository(db, redisDb)
 	resourceRepository := repository.NewResourceRespository(db, redisDb)
+	resourceTypeRepository := repository.NewResourceType(db, redisDb)
 
 	// Service
 	userService := service.NewUserService(userRepository)
 	authService := service.NewAuthService(authRepository)
 	vendorService := service.NewVendorService(vendorRepository)
 	resourceService := service.NewResourceService(resourceRepository)
+	resourceTypeService := service.NewResourceTypeService(resourceTypeRepository)
 
 	// Handler
 	userHandler := handlers.NewUserHandlers(userService, validator, logger)
 	authHandler := handlers.NewAuthHandlers(authService, userService, validator, logger)
 	vendorHandler := handlers.NewVendorHandlers(vendorService, validator, logger)
-	resourcehandler := handlers.New
+	resourcehandler := handlers.NewResourceHandler(resourceService, validator, logger)
+	resourceTypeHandler := handlers.NewResourceTypeHandlers(resourceTypeService, validator, logger)
 
 	// Routes
 	routes.SetupAPIRoutes(
@@ -90,6 +93,8 @@ func main() {
 		userHandler,
 		authHandler,
 		vendorHandler,
+		resourcehandler,
+		resourceTypeHandler,
 	)
 
 	portListen := fmt.Sprintf(":%s", cfg.App.Port)
