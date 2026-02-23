@@ -2,6 +2,9 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/entities"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/repositories"
@@ -36,15 +39,34 @@ func (r *ResourceRespositoryImpl) GetResourceTypeById(ctx context.Context, resou
 	return &resourceType, err
 }
 
+type cachedResourceTypeResult struct {
+	Data  []*entities.ResourceType `json:"data"`
+	Total int                      `json:"total"`
+}
+
 func (r *ResourceRespositoryImpl) GetAllResourceType(ctx context.Context, name string, limit int, offset int, sortBy string, sortOrder string) ([]*entities.ResourceType, int, error) {
 
-	var resourceType []*entities.ResourceType
+	// Build cache key based on query params
+	cacheKey := fmt.Sprintf("resource_type:all:%s:%d:%d:%s:%s", name, limit, offset, sortBy, sortOrder)
+
+	// Try get from Redis
+	cached, err := r.redis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var result cachedResourceTypeResult
+		if jsonErr := json.Unmarshal([]byte(cached), &result); jsonErr == nil {
+			return result.Data, result.Total, nil
+		}
+	}
+
+	var resourceTypes []*entities.ResourceType
 	var total int64
 
 	baseQuery := r.db.WithContext(ctx).Model(&entities.ResourceType{})
+	countQuery := r.db.WithContext(ctx).Model(&entities.ResourceType{})
 
 	if name != "" {
-		baseQuery = baseQuery.Where("resource_type_name = ?", name)
+		baseQuery = baseQuery.Where("resource_type_name ILIKE ?", "%"+name+"%")
+		countQuery = countQuery.Where("resource_type_name ILIKE ?", "%"+name+"%")
 	}
 
 	if limit > 0 {
@@ -59,21 +81,33 @@ func (r *ResourceRespositoryImpl) GetAllResourceType(ctx context.Context, name s
 		baseQuery = baseQuery.Order(sortBy + " " + sortOrder)
 	}
 
-	if err := baseQuery.Find(&resourceType).Error; err != nil {
+	if err := baseQuery.Find(&resourceTypes).Error; err != nil {
 		return nil, 0, err
 	}
 
-	if err := baseQuery.Count(&total).Error; err != nil {
+	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	return resourceType, int(total), nil
+	// Store to Redis
+	result := cachedResourceTypeResult{Data: resourceTypes, Total: int(total)}
+	if jsonData, jsonErr := json.Marshal(result); jsonErr == nil {
+		r.redis.Set(ctx, cacheKey, jsonData, 5*time.Minute)
+	}
+
+	return resourceTypes, int(total), nil
 }
 
 func (r *ResourceRespositoryImpl) CreateResourceType(ctx context.Context, resourceType *entities.ResourceType) (*entities.ResourceType, error) {
 
 	if err := r.db.WithContext(ctx).Model(&entities.ResourceType{}).Create(&resourceType).Error; err != nil {
 		return nil, err
+	}
+
+	pattern := "resource_type:all:*"
+	keys, _ := r.redis.Keys(ctx, pattern).Result()
+	if len(keys) > 0 {
+		r.redis.Del(ctx, keys...)
 	}
 
 	return resourceType, nil
@@ -103,6 +137,12 @@ func (r *ResourceRespositoryImpl) UpdateResourceType(ctx context.Context, resour
 		return nil, err
 	}
 
+	pattern := "resource_type:all:*"
+	keys, _ := r.redis.Keys(ctx, pattern).Result()
+	if len(keys) > 0 {
+		r.redis.Del(ctx, keys...)
+	}
+
 	return &updatedResourceType, nil
 }
 
@@ -127,6 +167,13 @@ func (r *ResourceRespositoryImpl) DeleteResourceType(ctx context.Context, resour
 
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
+	}
+
+	// Contoh invalidasi saat create/update/delete
+	pattern := "resource_type:all:*"
+	keys, _ := r.redis.Keys(ctx, pattern).Result()
+	if len(keys) > 0 {
+		r.redis.Del(ctx, keys...)
 	}
 
 	return nil
