@@ -3,11 +3,13 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/entities"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/repositories"
+	errConst "github.com/Ardnh/be-coworking-space-booking-app/pkg/errors"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -33,6 +35,9 @@ func (r *ResourceRespositoryImpl) GetResourceTypeById(ctx context.Context, resou
 		First(&resourceType).Error
 
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errConst.ErrNotFound
+		}
 		return nil, err
 	}
 
@@ -105,11 +110,22 @@ func (r *ResourceRespositoryImpl) CreateResourceType(ctx context.Context, resour
 	}
 
 	pattern := "resource_type:all:*"
-	keys, _ := r.redis.Keys(ctx, pattern).Result()
-	if len(keys) > 0 {
-		r.redis.Del(ctx, keys...)
+	var cursor uint64
+	totalDeleted := 0
+	for {
+		keys, nextCursor, err := r.redis.Scan(ctx, cursor, pattern, 100).Result()
+		if err != nil {
+			break
+		}
+		if len(keys) > 0 {
+			r.redis.Del(ctx, keys...)
+			totalDeleted += len(keys)
+		}
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
 	}
-
 	return resourceType, nil
 }
 
@@ -117,20 +133,21 @@ func (r *ResourceRespositoryImpl) UpdateResourceType(ctx context.Context, resour
 
 	result := r.db.WithContext(ctx).
 		Model(&entities.ResourceType{}).
-		Where("resource_type_id = ? ", resourceType.ResourceTypeID).
+		Where("resource_type_id = ?", resourceType.ResourceTypeID).
 		Updates(resourceType)
 
 	if result.Error != nil {
-		return nil, result.Error
-	}
 
-	if result.RowsAffected == 0 {
-		return nil, gorm.ErrRecordNotFound
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, errConst.ErrNotFound
+		}
+		return nil, result.Error
 	}
 
 	var updatedResourceType entities.ResourceType
 	err := r.db.WithContext(ctx).
 		Model(&entities.ResourceType{}).
+		Where("resource_type_id = ? ", resourceType.ResourceTypeID).
 		First(&updatedResourceType).Error
 
 	if err != nil {
@@ -138,9 +155,16 @@ func (r *ResourceRespositoryImpl) UpdateResourceType(ctx context.Context, resour
 	}
 
 	pattern := "resource_type:all:*"
-	keys, _ := r.redis.Keys(ctx, pattern).Result()
-	if len(keys) > 0 {
-		r.redis.Del(ctx, keys...)
+	var cursor uint64
+	for {
+		keys, nextCursor, _ := r.redis.Scan(ctx, cursor, pattern, 100).Result()
+		if len(keys) > 0 {
+			r.redis.Del(ctx, keys...)
+		}
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
 	}
 
 	return &updatedResourceType, nil
@@ -154,6 +178,9 @@ func (r *ResourceRespositoryImpl) DeleteResourceType(ctx context.Context, resour
 		First(&resourceType).Error
 
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errConst.ErrNotFound
+		}
 		return err
 	}
 
@@ -169,11 +196,17 @@ func (r *ResourceRespositoryImpl) DeleteResourceType(ctx context.Context, resour
 		return gorm.ErrRecordNotFound
 	}
 
-	// Contoh invalidasi saat create/update/delete
 	pattern := "resource_type:all:*"
-	keys, _ := r.redis.Keys(ctx, pattern).Result()
-	if len(keys) > 0 {
-		r.redis.Del(ctx, keys...)
+	var cursor uint64
+	for {
+		keys, nextCursor, _ := r.redis.Scan(ctx, cursor, pattern, 100).Result()
+		if len(keys) > 0 {
+			r.redis.Del(ctx, keys...)
+		}
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
 	}
 
 	return nil

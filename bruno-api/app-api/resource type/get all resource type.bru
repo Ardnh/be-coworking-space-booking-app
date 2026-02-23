@@ -5,9 +5,16 @@ meta {
 }
 
 get {
-  url: {{base_url}}/resource-type
+  url: {{base_url}}/resource-types?pageSize=10&page=1&sort_by&sort_order
   body: none
   auth: inherit
+}
+
+params:query {
+  pageSize: 10
+  page: 1
+  sort_by: 
+  sort_order: 
 }
 
 settings {

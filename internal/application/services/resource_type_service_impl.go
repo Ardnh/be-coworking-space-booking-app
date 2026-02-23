@@ -86,6 +86,8 @@ func (s *ResourceTypeServiceImpl) UpdateResourceType(ctx context.Context, resour
 		existingResourceType.ParentResourceTypeID = resourceType.ParentResourceTypeId
 	}
 
+	existingResourceType.UpdatedAt = time.Now()
+
 	result, err := s.repo.UpdateResourceType(ctx, existingResourceType)
 	if err != nil {
 		return nil, err

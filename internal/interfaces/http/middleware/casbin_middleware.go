@@ -16,8 +16,6 @@ func NewCasbinMiddleware(enforcer *casbin.Enforcer) *CasbinMiddleware {
 
 func (m *CasbinMiddleware) Authorize() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
-		// Ambil user type dari context (sudah di-set oleh auth middleware)
 		userType := c.Locals("user_type")
 		if userType == nil {
 			return http.NewErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized", nil)
@@ -27,7 +25,6 @@ func (m *CasbinMiddleware) Authorize() fiber.Handler {
 		object := c.Path()
 		action := c.Method()
 
-		// Enforce policy
 		allowed, err := m.enforcer.Enforce(subject, object, action)
 		if err != nil {
 			return http.NewErrorResponse(c, fiber.StatusInternalServerError, "Failed to check permission", err)

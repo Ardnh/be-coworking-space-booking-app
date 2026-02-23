@@ -1,6 +1,9 @@
 package responses
 
 import (
+	"errors"
+
+	errorsConst "github.com/Ardnh/be-coworking-space-booking-app/pkg/errors"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -55,4 +58,22 @@ func NewErrorResponse(c *fiber.Ctx, statusCode int, message any, err any) error 
 		Message: message,
 		Error:   err,
 	})
+}
+
+// Centralized error handler
+func HandleError(c *fiber.Ctx, err error) error {
+	switch {
+	case errors.Is(err, errorsConst.ErrNotFound):
+		return NewErrorResponse(c, fiber.StatusNotFound, err.Error(), nil)
+	case errors.Is(err, errorsConst.ErrConflict):
+		return NewErrorResponse(c, fiber.StatusConflict, err.Error(), nil)
+	case errors.Is(err, errorsConst.ErrInvalidInput):
+		return NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	case errors.Is(err, errorsConst.ErrUnauthorized):
+		return NewErrorResponse(c, fiber.StatusUnauthorized, err.Error(), nil)
+	case errors.Is(err, errorsConst.ErrForbidden):
+		return NewErrorResponse(c, fiber.StatusForbidden, err.Error(), nil)
+	default:
+		return NewErrorResponse(c, fiber.StatusInternalServerError, "Internal server error", nil)
+	}
 }

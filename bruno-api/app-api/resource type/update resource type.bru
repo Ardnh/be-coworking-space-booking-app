@@ -5,18 +5,17 @@ meta {
 }
 
 put {
-  url: {{base_url}}/resource-type/?id
+  url: {{base_url}}/resource-types/0166abc9-43c3-4861-b834-ab1e75b94f06
   body: json
   auth: inherit
 }
 
-params:query {
-  id: 
-}
-
 body:json {
   {
-    
+    "resource_type_name": "Updated resource type",
+    "description": "Updated resource type description",
+    "parent_resource_type_id": null,
+    "icon": "updated-icon"
   }
 }
 

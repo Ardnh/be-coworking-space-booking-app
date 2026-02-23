@@ -6,8 +6,17 @@ meta {
 
 post {
   url: {{base_url}}/resource-type
-  body: none
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+    "resource_type_name": "Test2",
+    "description": "Test2 description",
+    "parent_resource_type_id": null,
+    "icon": "test2 icon"
+  }
 }
 
 settings {

@@ -41,7 +41,7 @@ func (h *ResourceTypeHandlers) GetAllResourceType(c *fiber.Ctx) error {
 
 	// 2. Parse query parameters page
 	pageStr := c.Query("page", "1")
-	pageInt := 1
+	pageInt := 0
 	if pageStr != "" {
 		page, err := strconv.Atoi(pageStr)
 		if err != nil || page < 1 {
@@ -51,6 +51,7 @@ func (h *ResourceTypeHandlers) GetAllResourceType(c *fiber.Ctx) error {
 		}
 	}
 
+	offset := (pageInt - 1) * limit
 	sortBy := c.Query("sort_by", "created_at")
 	sortOrder := c.Query("sort_order", "DESC")
 
@@ -63,9 +64,9 @@ func (h *ResourceTypeHandlers) GetAllResourceType(c *fiber.Ctx) error {
 	// 3. Optional: Get additional filters
 	searchQuery := c.Query("name", "")
 
-	result, totalItems, err := h.resourceTypeService.GetAllResourceType(c.Context(), searchQuery, limit, pageInt, sortBy, sortOrder)
+	result, totalItems, err := h.resourceTypeService.GetAllResourceType(c.Context(), searchQuery, limit, offset, sortBy, sortOrder)
 	if err != nil {
-		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+		return http.HandleError(c, err)
 	}
 
 	totalPages := 0
@@ -94,11 +95,11 @@ func (h *ResourceTypeHandlers) GetResourceTypeById(c *fiber.Ctx) error {
 
 	resourceTypeIdUUID, err := uuid.Parse(id)
 	if err != nil {
-		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+		return http.HandleError(c, err)
 	}
 	result, err := h.resourceTypeService.GetResourceTypeById(c.Context(), resourceTypeIdUUID)
 	if err != nil {
-		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+		return http.HandleError(c, err)
 	}
 
 	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully get resource type by id", result)
@@ -132,7 +133,7 @@ func (h *ResourceTypeHandlers) UpdateResourceType(c *fiber.Ctx) error {
 
 	var req dto.UpdateResourceTypeRequestDto
 	if err := c.BodyParser(&req); err != nil {
-		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+		return http.HandleError(c, err)
 	}
 
 	if err := h.validator.Struct(&req); err != nil {
@@ -141,12 +142,12 @@ func (h *ResourceTypeHandlers) UpdateResourceType(c *fiber.Ctx) error {
 
 	resourceTypeIdUUID, err := uuid.Parse(id)
 	if err != nil {
-		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+		return http.HandleError(c, err)
 	}
 
 	result, err := h.resourceTypeService.UpdateResourceType(c.Context(), resourceTypeIdUUID, &req)
 	if err != nil {
-		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+		return http.HandleError(c, err)
 	}
 
 	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully updated resource type", result)
@@ -166,7 +167,7 @@ func (h *ResourceTypeHandlers) DeleteResourceType(c *fiber.Ctx) error {
 
 	errDelete := h.resourceTypeService.DeleteResourceType(c.Context(), resourceTypeIdUUID)
 	if errDelete != nil {
-		return http.NewErrorResponse(c, fiber.StatusInternalServerError, errDelete.Error(), nil)
+		return http.HandleError(c, errDelete)
 	}
 
 	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully deleted resource type", nil)

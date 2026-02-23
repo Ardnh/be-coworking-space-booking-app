@@ -17,3 +17,10 @@ p, admin, /api/v1/vendors/:vendorId, GET
 p, admin, /api/v1/vendors/:vendorId/resources, GET
 p, admin, /api/v1/vendors/:vendorId, PUT
 p, admin, /api/v1/vendors/:vendorId, DELETE
+
+# Resource Type
+p, admin, /api/v1/resource-types, GET
+p, admin, /api/v1/resource-types/:resourceTypeId, GET
+p, admin, /api/v1/resource-types, POST
+p, admin, /api/v1/resource-types/:resourceTypeId, PUT
+p, admin, /api/v1/resource-types/:resourceTypeId, DELETE
