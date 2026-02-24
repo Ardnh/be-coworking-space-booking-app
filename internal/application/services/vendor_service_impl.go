@@ -21,7 +21,7 @@ func NewVendorService(repo repositories.VendorRepository) services.VendorService
 	}
 }
 
-func (s *VendorServiceImpl) GetAllVendors(ctx context.Context, params dto.VendorFilterRequest) ([]dto.VendorResponseDto, int, error) {
+func (s *VendorServiceImpl) GetAllVendors(ctx context.Context, params dto.VendorFilterRequest) ([]dto.VendorDto, int, error) {
 
 	vendors, total, err := s.repo.GetAllVendors(ctx, params.Name, params.City, params.PageSize, params.Offset, params.SortBy, params.SortDirection)
 	if err != nil {
@@ -32,7 +32,7 @@ func (s *VendorServiceImpl) GetAllVendors(ctx context.Context, params dto.Vendor
 	return result, total, nil
 }
 
-func (s *VendorServiceImpl) GetVendorByID(ctx context.Context, vendorID uuid.UUID) (*dto.VendorResponseDto, error) {
+func (s *VendorServiceImpl) GetVendorByID(ctx context.Context, vendorID uuid.UUID) (*dto.VendorDto, error) {
 
 	vendor, err := s.repo.GetVendorByID(ctx, vendorID)
 	if err != nil {
@@ -43,7 +43,7 @@ func (s *VendorServiceImpl) GetVendorByID(ctx context.Context, vendorID uuid.UUI
 	return &result, nil
 }
 
-func (s *VendorServiceImpl) GetVendorsResourcesByVendorID(ctx context.Context, vendorID uuid.UUID) ([]dto.ResourceResponseDto, error) {
+func (s *VendorServiceImpl) GetVendorsResourcesByVendorID(ctx context.Context, vendorID uuid.UUID) ([]dto.ResourceDto, error) {
 
 	result, err := s.repo.GetVendorsResourcesByVendorID(ctx, vendorID)
 	if err != nil {
@@ -54,7 +54,7 @@ func (s *VendorServiceImpl) GetVendorsResourcesByVendorID(ctx context.Context, v
 	return resultDto, nil
 }
 
-func (s *VendorServiceImpl) CreateVendor(ctx context.Context, vendor *dto.CreateVendorRequestDto) (*dto.VendorResponseDto, error) {
+func (s *VendorServiceImpl) CreateVendor(ctx context.Context, vendor *dto.CreateVendorRequestDto) (*dto.VendorDto, error) {
 
 	ownerUserIdUuid, err := uuid.Parse(vendor.OwnerUserID)
 	if err != nil {
@@ -77,11 +77,10 @@ func (s *VendorServiceImpl) CreateVendor(ctx context.Context, vendor *dto.Create
 	}
 
 	resultDto := mapper.ToVendorDto(result)
-
 	return &resultDto, nil
 }
 
-func (s *VendorServiceImpl) UpdateVendor(ctx context.Context, vendorID uuid.UUID, vendor *dto.UpdateVendorRequestDto) (*dto.VendorResponseDto, error) {
+func (s *VendorServiceImpl) UpdateVendor(ctx context.Context, vendorID uuid.UUID, vendor *dto.UpdateVendorRequestDto) (*dto.VendorDto, error) {
 
 	existingVendor, err := s.repo.GetVendorByID(ctx, vendorID)
 	if err != nil {

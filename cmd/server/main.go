@@ -62,7 +62,6 @@ func main() {
 	requestTimer := middleware.NewRequestTimerMiddleware(logger)
 
 	app.Use(requestTimer.Track())
-	// app.Use(middleware.Logger(logger))
 
 	// Repository
 	userRepository := repository.NewUsersRepository(db, redisDb)
@@ -70,6 +69,7 @@ func main() {
 	vendorRepository := repository.NewVendorRepository(db, redisDb)
 	resourceRepository := repository.NewResourceRespository(db, redisDb)
 	resourceTypeRepository := repository.NewResourceType(db, redisDb)
+	blockedDateRepository := repository.NewBlockedDateRepository(db, redisDb)
 
 	// Service
 	userService := service.NewUserService(userRepository)
@@ -77,6 +77,7 @@ func main() {
 	vendorService := service.NewVendorService(vendorRepository)
 	resourceService := service.NewResourceService(resourceRepository)
 	resourceTypeService := service.NewResourceTypeService(resourceTypeRepository)
+	blockedDateService := service.NewBlockedDateService(blockedDateRepository)
 
 	// Handler
 	userHandler := handlers.NewUserHandlers(userService, validator, logger)
@@ -84,6 +85,7 @@ func main() {
 	vendorHandler := handlers.NewVendorHandlers(vendorService, validator, logger)
 	resourcehandler := handlers.NewResourceHandler(resourceService, validator, logger)
 	resourceTypeHandler := handlers.NewResourceTypeHandlers(resourceTypeService, validator, logger)
+	blockedDateHandler := handlers.NewBlockedDateHandlers(blockedDateService, validator, logger)
 
 	// Routes
 	routes.SetupAPIRoutes(
@@ -95,6 +97,7 @@ func main() {
 		vendorHandler,
 		resourcehandler,
 		resourceTypeHandler,
+		blockedDateHandler,
 	)
 
 	portListen := fmt.Sprintf(":%s", cfg.App.Port)

@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"strings"
+
+	"github.com/Ardnh/be-coworking-space-booking-app/internal/application/dto"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/services"
 	http "github.com/Ardnh/be-coworking-space-booking-app/internal/interfaces/http/responses"
 	"github.com/go-playground/validator/v10"
@@ -9,16 +12,16 @@ import (
 )
 
 type ResourceHandlers struct {
-	vendorService services.ResourceService
-	validator     *validator.Validate
-	log           *logrus.Logger
+	service   services.ResourceService
+	validator *validator.Validate
+	log       *logrus.Logger
 }
 
 func NewResourceHandler(vendorService services.ResourceService, validator *validator.Validate, log *logrus.Logger) *ResourceHandlers {
 	return &ResourceHandlers{
-		vendorService: vendorService,
-		validator:     validator,
-		log:           log,
+		service:   vendorService,
+		validator: validator,
+		log:       log,
 	}
 }
 
@@ -58,27 +61,42 @@ func (h *ResourceHandlers) GetResource(c *fiber.Ctx) error {
 
 func (h *ResourceHandlers) CreateResource(c *fiber.Ctx) error {
 
-	// // ── 1. Parse field teks ──────────────────────────────────────────────────
-	// name := strings.TrimSpace(c.FormValue("resource_name"))
-	// resourceTypeId := strings.TrimSpace(c.FormValue("resource_type_id"))
-	// location := strings.TrimSpace(c.FormValue("location"))
-	// description := strings.TrimSpace(c.FormValue("description"))
+	// ── 1. Parse field teks ──────────────────────────────────────────────────
+	// String
+	vendorId := strings.TrimSpace(c.FormValue("vandor_id"))
+	resourceTypeId := strings.TrimSpace(c.FormValue("resource_type_id"))
+	resourceName := strings.TrimSpace(c.FormValue("resource_name"))
+	location := strings.TrimSpace(c.FormValue("location"))
+	description := strings.TrimSpace(c.FormValue("description"))
+	operationTimeFrom := strings.TrimSpace(c.FormValue("operation_time_from"))
+	operationTimeTo := strings.TrimSpace(c.FormValue("operation_time_to"))
+	endDate := strings.TrimSpace(c.FormValue("end_date"))
 
-	// capacityStr := strings.TrimSpace(c.FormValue("capacity"))
-	// priceStr := strings.TrimSpace(c.FormValue("price"))
+	// Number
+	capacityStr := strings.TrimSpace(c.FormValue("capacity"))
+	pricePerUnitStr := strings.TrimSpace(c.FormValue("price_per_unit"))
 
-	// // Validasi field wajib
+	// Array
+	blockedDateStr := strings.TrimSpace(c.FormValue("blocked_date"))
 
-	// // ── 2. Parse multiple file gambar ────────────────────────────────────────
-	// form, err := c.MultipartForm()
-	// if err != nil {
-	// 	return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
-	// }
+	// Validasi field wajib
+	req := dto.CreateResourceRequestDto{}
 
-	// files := form.File["images"] // key "images" dari form-data
-	// if len(files) == 0 {
-	// 	return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
-	// }
+	// ── 2. Parse multiple file gambar ────────────────────────────────────────
+	form, err := c.MultipartForm()
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	files := form.File["images"]
+	if len(files) == 0 {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "At least one image is required", nil)
+	}
+
+	result, errCreate := h.service.CreateResource(c.Context(), req, files)
+	if errCreate != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, errCreate.Error(), nil)
+	}
 
 	// // ── 3. Validasi & simpan setiap file ─────────────────────────────────────
 	// allowedExt := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
@@ -99,14 +117,15 @@ func (h *ResourceHandlers) CreateResource(c *fiber.Ctx) error {
 	// 	}
 
 	// 	// Generate nama file unik
-	// 	uniqueName := fmt.Sprintf("%d_%s%s",
+	// 	uniqueName := fmt.Sprintf("%d_%s_%s%s",
 	// 		time.Now().UnixNano(),
-	// 		strings.ReplaceAll(name, " ", "_"),
+	// 		uuid.New().String()[:8], // 8 char random
+	// 		strings.ReplaceAll(resourceName, " ", "_"),
 	// 		ext,
 	// 	)
 	// 	savePath := filepath.Join("uploads", uniqueName)
 
-	// 	// Simpan file (upload to cloudinary)
+	// 	// 	// Simpan file (upload to cloudinary)
 	// 	if err := c.SaveFile(file, savePath); err != nil {
 	// 		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
 	// 	}

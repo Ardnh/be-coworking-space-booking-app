@@ -8,11 +8,11 @@ import (
 )
 
 type VendorService interface {
-	GetAllVendors(ctx context.Context, params dto.VendorFilterRequest) ([]dto.VendorResponseDto, int, error)
-	GetVendorByID(ctx context.Context, vendorID uuid.UUID) (*dto.VendorResponseDto, error)
-	GetVendorsResourcesByVendorID(ctx context.Context, vendorID uuid.UUID) ([]dto.ResourceResponseDto, error)
+	GetAllVendors(ctx context.Context, params dto.VendorFilterRequest) ([]dto.VendorDto, int, error)
+	GetVendorByID(ctx context.Context, vendorID uuid.UUID) (*dto.VendorDto, error)
+	GetVendorsResourcesByVendorID(ctx context.Context, vendorID uuid.UUID) ([]dto.ResourceDto, error)
 	// GetVendorReviews(ctx context.Context, vendorID uuid.UUID) ([]*entities.Review, error)
-	CreateVendor(ctx context.Context, vendor *dto.CreateVendorRequestDto) (*dto.VendorResponseDto, error)
-	UpdateVendor(ctx context.Context, vendorID uuid.UUID, vendor *dto.UpdateVendorRequestDto) (*dto.VendorResponseDto, error)
+	CreateVendor(ctx context.Context, vendor *dto.CreateVendorRequestDto) (*dto.VendorDto, error)
+	UpdateVendor(ctx context.Context, vendorID uuid.UUID, vendor *dto.UpdateVendorRequestDto) (*dto.VendorDto, error)
 	DeleteVendor(ctx context.Context, vendorID uuid.UUID) error
 }

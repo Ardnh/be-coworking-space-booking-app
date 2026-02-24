@@ -1,6 +1,6 @@
 package dto
 
-type VendorResponseDto struct {
+type VendorDto struct {
 	VendorID    string  `json:"vendor_id"`
 	OwnerUserID string  `json:"owner_user_id"`
 	VendorName  string  `json:"vendor_name"`
@@ -18,11 +18,11 @@ type VendorResponseDto struct {
 }
 
 type VendorListResponseDto struct {
-	Vendors   []VendorResponseDto `json:"vendors"`
-	Total     int                 `json:"total"`
-	Page      int                 `json:"page"`
-	PageSize  int                 `json:"page_size"`
-	TotalPage int                 `json:"total_page"`
+	Vendors   []VendorDto `json:"vendors"`
+	Total     int         `json:"total"`
+	Page      int         `json:"page"`
+	PageSize  int         `json:"page_size"`
+	TotalPage int         `json:"total_page"`
 }
 
 // ==================== REQUEST DTOs ====================

@@ -5,16 +5,16 @@ import (
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/entities"
 )
 
-func ToVendorListDto(vendor []*entities.Vendor) []dto.VendorResponseDto {
-	var vendorsListDto []dto.VendorResponseDto
+func ToVendorListDto(vendor []*entities.Vendor) []dto.VendorDto {
+	var vendorsListDto []dto.VendorDto
 	for _, v := range vendor {
 		vendorsListDto = append(vendorsListDto, ToVendorDto(v))
 	}
 	return vendorsListDto
 }
 
-func ToVendorDto(vendor *entities.Vendor) dto.VendorResponseDto {
-	return dto.VendorResponseDto{
+func ToVendorDto(vendor *entities.Vendor) dto.VendorDto {
+	return dto.VendorDto{
 		VendorID:    vendor.VendorID.String(),
 		OwnerUserID: vendor.OwnerUserID.String(),
 		VendorName:  vendor.VendorName,
@@ -30,8 +30,8 @@ func ToVendorDto(vendor *entities.Vendor) dto.VendorResponseDto {
 	}
 }
 
-func ToDetailVendorResponse(vendor *entities.Vendor) dto.VendorResponseDto {
-	return dto.VendorResponseDto{
+func ToDetailVendorResponse(vendor *entities.Vendor) dto.VendorDto {
+	return dto.VendorDto{
 		VendorID:    vendor.VendorID.String(),
 		OwnerUserID: vendor.OwnerUserID.String(),
 		VendorName:  vendor.VendorName,
@@ -47,8 +47,8 @@ func ToDetailVendorResponse(vendor *entities.Vendor) dto.VendorResponseDto {
 	}
 }
 
-func ToVendorResourceListDto(resources []*entities.Resource) []dto.ResourceResponseDto {
-	var resourcesListDto []dto.ResourceResponseDto
+func ToVendorResourceListDto(resources []*entities.Resource) []dto.ResourceDto {
+	var resourcesListDto []dto.ResourceDto
 	for _, r := range resources {
 		resourcesListDto = append(resourcesListDto, ToVendorResourceDto(r))
 	}
@@ -56,8 +56,8 @@ func ToVendorResourceListDto(resources []*entities.Resource) []dto.ResourceRespo
 	return resourcesListDto
 }
 
-func ToVendorResourceDto(resource *entities.Resource) dto.ResourceResponseDto {
-	return dto.ResourceResponseDto{
+func ToVendorResourceDto(resource *entities.Resource) dto.ResourceDto {
+	return dto.ResourceDto{
 		ResourceID:   resource.ResourceID.String(),
 		VendorID:     resource.VendorID.String(),
 		ResourceName: resource.ResourceName,

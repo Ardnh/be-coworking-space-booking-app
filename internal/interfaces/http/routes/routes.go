@@ -17,6 +17,7 @@ func SetupAPIRoutes(
 	vendorHandler *handlers.VendorHandlers,
 	resourceHandler *handlers.ResourceHandlers,
 	resourceTypeHandler *handlers.ResourceTypeHandlers,
+	blockedDateHandler *handlers.BlockedDateHandlers,
 ) {
 
 	// Middleware
@@ -77,6 +78,14 @@ func SetupAPIRoutes(
 		resourceTypes.Post("/", resourceTypeHandler.CreateResourceType)
 		resourceTypes.Put("/:resourceTypeId", resourceTypeHandler.UpdateResourceType)
 		resourceTypes.Delete("/:resourceTypeId", resourceTypeHandler.DeleteResourceType)
+
+		// Blocked Date Routes
+		blockedDate := protected.Group("/blocked-date", casbinMiddleware.Authorize())
+		blockedDate.Get("/", blockedDateHandler.GetBlockedDate)
+		blockedDate.Get("/:blockedDateId", blockedDateHandler.GetBlockedDateById)
+		blockedDate.Post("/", blockedDateHandler.CreateBlockedDate)
+		blockedDate.Put("/:blockedDateId", blockedDateHandler.UpdateBlockedDate)
+		blockedDate.Delete("/:blockedDateId", blockedDateHandler.DeleteBlockedDate)
 	}
 
 }
