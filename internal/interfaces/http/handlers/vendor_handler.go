@@ -186,7 +186,8 @@ func (h *VendorHandlers) CreateVendor(c *fiber.Ctx) error {
 
 	result, err := h.vendorService.CreateVendor(c.Context(), profileImage, &req)
 	if err != nil {
-		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+		h.log.Error(err)
+		return http.NewErrorResponse(c, fiber.StatusInternalServerError, "Failed to create vendor", nil)
 	}
 
 	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully created vendor", result)
@@ -199,9 +200,27 @@ func (h *VendorHandlers) UpdateVendor(c *fiber.Ctx) error {
 		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
 	}
 
-	var req dto.UpdateVendorRequestDto
-	if err := c.BodyParser(&req); err != nil {
+	// ── 1. Parse field teks ──────────────────────────────────────────────────
+	// String
+	vendorName := strings.TrimSpace(c.FormValue("vendor_name"))
+	address := strings.TrimSpace(c.FormValue("address"))
+	city := strings.TrimSpace(c.FormValue("city"))
+	phoneNumber := strings.TrimSpace(c.FormValue("phone_number"))
+	email := strings.TrimSpace(c.FormValue("email"))
+	description := strings.TrimSpace(c.FormValue("description"))
+	profileImage, err := c.FormFile("image")
+
+	if err != nil {
 		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	req := dto.UpdateVendorRequestDto{
+		VendorName:  &vendorName,
+		Address:     &address,
+		City:        &city,
+		PhoneNumber: &phoneNumber,
+		Email:       &email,
+		Description: &description,
 	}
 
 	if err := h.validator.Struct(&req); err != nil {
@@ -213,9 +232,9 @@ func (h *VendorHandlers) UpdateVendor(c *fiber.Ctx) error {
 		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
 	}
 
-	result, err := h.vendorService.UpdateVendor(c.Context(), vendorIdUUID, &req)
+	result, err := h.vendorService.UpdateVendor(c.Context(), vendorIdUUID, profileImage, &req)
 	if err != nil {
-		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
+		return http.HandleError(c, err)
 	}
 
 	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully update vendor", result)
@@ -235,7 +254,7 @@ func (h *VendorHandlers) DeleteVendor(c *fiber.Ctx) error {
 
 	errDelete := h.vendorService.DeleteVendor(c.Context(), vendorIdUUID)
 	if errDelete != nil {
-		return http.NewErrorResponse(c, fiber.StatusInternalServerError, errDelete.Error(), nil)
+		return http.HandleError(c, errDelete)
 	}
 
 	return http.NewSuccessResponse(c, fiber.StatusCreated, "Successfully delete vendor", nil)
