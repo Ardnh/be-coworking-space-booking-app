@@ -8,5 +8,5 @@ import (
 )
 
 type ResourceService interface {
-	CreateResource(ctx context.Context, req dto.CreateResourceRequestDto, images []*multipart.FileHeader) (*dto.ResourceResponseDto, error)
+	CreateResource(ctx context.Context, req *dto.CreateResourceRequestDto, images []*multipart.FileHeader) (*dto.ResourceDto, error)
 }

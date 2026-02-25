@@ -11,9 +11,10 @@ import (
 )
 
 type Config struct {
-	Database DatabaseConfig
-	Redis    RedisConfig
-	App      AppConfig
+	Database         DatabaseConfig
+	Redis            RedisConfig
+	App              AppConfig
+	CloudinaryConfig CloudiaryConfig
 }
 
 type DatabaseConfig struct {
@@ -40,6 +41,13 @@ type AppConfig struct {
 	Env       string
 	Port      string
 	JWTSecret string
+}
+
+type CloudiaryConfig struct {
+	CloudinaryFolderName string
+	CloudinaryCloudName  string
+	CloudinaryAPIKey     string
+	CloudinaryAPISecret  string
 }
 
 // LoadConfig membaca config dari .env
@@ -72,6 +80,12 @@ func LoadConfig() *Config {
 			Env:       getEnv("APP_ENV", "development"),
 			Port:      getEnv("APP_PORT", "8080"),
 			JWTSecret: getEnv("APP_JWT_SECRET", ""),
+		},
+		CloudinaryConfig: CloudiaryConfig{
+			CloudinaryFolderName: getEnv("CLOUDINARY_FOLDER_NAME", "coworking-space-booking-app-assets"),
+			CloudinaryCloudName:  getEnv("CLOUDINARY_CLOUD_NAME", ""),
+			CloudinaryAPIKey:     getEnv("CLOUDINARY_API_KEY", ""),
+			CloudinaryAPISecret:  getEnv("CLOUDINARY_API_SECRET", ""),
 		},
 	}
 }

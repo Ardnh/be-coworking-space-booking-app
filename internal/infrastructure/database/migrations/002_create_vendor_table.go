@@ -19,6 +19,7 @@ func init() {
 					description TEXT NOT NULL,
 					rating DECIMAL(10,2) NOT NULL DEFAULT 0,
 					status VARCHAR(20) NOT NULL DEFAULT 'active',
+					profile_image VARCHAR(255),
 					CONSTRAINT chk_status CHECK (status IN ('active', 'inactive')),
 					created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 					updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -155,16 +155,36 @@ func (h *VendorHandlers) GetVendorsResourcesByVendorID(c *fiber.Ctx) error {
 
 func (h *VendorHandlers) CreateVendor(c *fiber.Ctx) error {
 
-	var req dto.CreateVendorRequestDto
-	if err := c.BodyParser(&req); err != nil {
-		return http.NewErrorResponse(c, fiber.StatusBadRequest, "Failed to create vendor", err.Error())
+	// ── 1. Parse field teks ──────────────────────────────────────────────────
+	// String
+	userOwnerId := strings.TrimSpace(c.FormValue("owner_user_id"))
+	vendorName := strings.TrimSpace(c.FormValue("vendor_name"))
+	address := strings.TrimSpace(c.FormValue("address"))
+	city := strings.TrimSpace(c.FormValue("city"))
+	phoneNumber := strings.TrimSpace(c.FormValue("phone_number"))
+	email := strings.TrimSpace(c.FormValue("email"))
+	description := strings.TrimSpace(c.FormValue("description"))
+	profileImage, err := c.FormFile("image")
+
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	req := dto.CreateVendorRequestDto{
+		OwnerUserID: userOwnerId,
+		VendorName:  vendorName,
+		Address:     address,
+		City:        city,
+		PhoneNumber: phoneNumber,
+		Email:       email,
+		Description: description,
 	}
 
 	if err := h.validator.Struct(&req); err != nil {
 		return http.NewErrorResponse(c, fiber.StatusBadRequest, "Failed to create vendor", validation_utils.FormatValidationErrors(err))
 	}
 
-	result, err := h.vendorService.CreateVendor(c.Context(), &req)
+	result, err := h.vendorService.CreateVendor(c.Context(), profileImage, &req)
 	if err != nil {
 		return http.NewErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
 	}

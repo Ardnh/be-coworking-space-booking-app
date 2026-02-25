@@ -24,3 +24,11 @@ p, admin, /api/v1/resource-types/:resourceTypeId, GET
 p, admin, /api/v1/resource-types, POST
 p, admin, /api/v1/resource-types/:resourceTypeId, PUT
 p, admin, /api/v1/resource-types/:resourceTypeId, DELETE
+
+# Resource
+p, admin, /api/v1/resources, GET
+p, admin, /api/v1/resources/:resourceId, GET
+p, admin, /api/v1/:resourceId/reviews, GET
+p, admin, /api/v1/resources, POST
+p, admin, /api/v1/resources/:resourceId, PUT
+p, admin, /api/v1/resources/:resourceId, DELETE

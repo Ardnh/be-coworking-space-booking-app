@@ -10,3 +10,9 @@ var (
 	ErrUnauthorized   = errors.New("unauthorized")
 	ErrForbidden      = errors.New("forbidden")
 )
+
+var (
+	ErrImageTooLarge      = errors.New("image too large")
+	ErrImageInvalidFormat = errors.New("image format not supported")
+	ErrImageInvalidSize   = errors.New("image size not supported")
+)

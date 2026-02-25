@@ -14,11 +14,11 @@ type Resource struct {
 	ResourceID        uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	VendorID          uuid.UUID      `gorm:"type:uuid;not null;index"`
 	ResourceName      string         `gorm:"type:varchar(255);not null;index:idx_resources_resource_name"`
-	ResourceTypeID    string         `gorm:"type:varchar(255);not null"`
+	ResourceTypeID    uuid.UUID      `gorm:"type:uuid;not null"`
 	Description       *string        `gorm:"type:text"`
 	Capacity          int            `gorm:"type:int;not null"`
-	OperationTimeFrom time.Time      `gorm:"type:time;not null"`
-	OperationTimeTo   time.Time      `gorm:"type:time;not null"`
+	OperationTimeFrom string         `gorm:"type:varchar(5);not null"`
+	OperationTimeTo   string         `gorm:"type:varchar(5);not null"`
 	EndDate           time.Time      `gorm:"type:date;not null"`
 	PricePerUnit      float64        `gorm:"type:decimal(10,2);not null"`
 	Images            ResourceImages `gorm:"type:jsonb"`        // Nullable JSONB

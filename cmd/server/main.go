@@ -56,6 +56,12 @@ func main() {
 		log.Fatal("Failed to create casbin enforcer:", err)
 	}
 
+	// Setup Cloudinary
+	cld, err := config.SetupCloudinary()
+	if err != nil {
+		log.Fatal("Failed to setup cloudinary:", err)
+	}
+
 	// 4. Wire up dependencies
 	// 5. Start HTTP server
 	app := fiber.New()
@@ -74,8 +80,8 @@ func main() {
 	// Service
 	userService := service.NewUserService(userRepository)
 	authService := service.NewAuthService(authRepository)
-	vendorService := service.NewVendorService(vendorRepository)
-	resourceService := service.NewResourceService(resourceRepository)
+	vendorService := service.NewVendorService(vendorRepository, cld)
+	resourceService := service.NewResourceService(resourceRepository, cld)
 	resourceTypeService := service.NewResourceTypeService(resourceTypeRepository)
 	blockedDateService := service.NewBlockedDateService(blockedDateRepository)
 

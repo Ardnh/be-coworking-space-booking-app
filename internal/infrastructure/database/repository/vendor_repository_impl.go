@@ -90,11 +90,6 @@ func (r *VendorRepositoryImpl) GetVendorsResourcesByVendorID(ctx context.Context
 	return vendorResources, nil
 }
 
-// func (r *VendorRepositoryImpl) GetVendorReviews(ctx context.Context, vendorID uuid.UUID) ([]*entities.Review, error) {
-
-// 	return nil, nil
-// }
-
 func (r *VendorRepositoryImpl) CreateVendor(ctx context.Context, vendor *entities.Vendor) (*entities.Vendor, error) {
 
 	if err := r.db.WithContext(ctx).Model(&entities.Vendor{}).Create(&vendor).Error; err != nil {

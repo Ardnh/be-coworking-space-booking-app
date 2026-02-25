@@ -62,3 +62,8 @@ const (
 	NotificationPromotion           = "promotion"
 	NotificationSystemAlert         = "system_alert"
 )
+
+const (
+	ResourceStatusActive   = "active"
+	ResourceStatusInactive = "inactive"
+)

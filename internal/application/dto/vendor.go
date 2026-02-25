@@ -1,20 +1,21 @@
 package dto
 
 type VendorDto struct {
-	VendorID    string  `json:"vendor_id"`
-	OwnerUserID string  `json:"owner_user_id"`
-	VendorName  string  `json:"vendor_name"`
-	Address     string  `json:"address"`
-	City        string  `json:"city"`
-	PhoneNumber string  `json:"phone_number"`
-	Email       string  `json:"email"`
-	Description string  `json:"description"`
-	Rating      float64 `json:"rating"`
-	RatingStars string  `json:"rating_stars"`
-	Status      string  `json:"status"`
-	StatusBadge string  `json:"status_badge"`
-	CreatedAt   string  `json:"created_at"`
-	UpdatedAt   string  `json:"updated_at"`
+	VendorID     string  `json:"vendor_id"`
+	OwnerUserID  string  `json:"owner_user_id"`
+	VendorName   string  `json:"vendor_name"`
+	Address      string  `json:"address"`
+	City         string  `json:"city"`
+	PhoneNumber  string  `json:"phone_number"`
+	Email        string  `json:"email"`
+	Description  string  `json:"description"`
+	Rating       float64 `json:"rating"`
+	RatingStars  string  `json:"rating_stars"`
+	Status       string  `json:"status"`
+	ProfileImage string  `json:"profile_image"`
+	StatusBadge  string  `json:"status_badge"`
+	CreatedAt    string  `json:"created_at"`
+	UpdatedAt    string  `json:"updated_at"`
 }
 
 type VendorListResponseDto struct {
@@ -28,23 +29,25 @@ type VendorListResponseDto struct {
 // ==================== REQUEST DTOs ====================
 // CreateVendorRequest - DTO untuk membuat vendor baru
 type CreateVendorRequestDto struct {
-	OwnerUserID string `json:"owner_user_id" validate:"required,uuid"`
-	VendorName  string `json:"vendor_name" validate:"required,min=3,max=255"`
-	Address     string `json:"address" validate:"required,min=5,max=255"`
-	City        string `json:"city" validate:"required,min=2,max=255"`
-	PhoneNumber string `json:"phone_number" validate:"required,min=10,max=20"`
-	Email       string `json:"email" validate:"required,email,max=255"`
-	Description string `json:"description" validate:"required,min=10,max=2000"`
+	OwnerUserID  string `json:"owner_user_id" validate:"required,uuid"`
+	VendorName   string `json:"vendor_name" validate:"required,min=3,max=255"`
+	Address      string `json:"address" validate:"required,min=5,max=255"`
+	City         string `json:"city" validate:"required,min=2,max=255"`
+	PhoneNumber  string `json:"phone_number" validate:"required,min=10,max=20"`
+	Email        string `json:"email" validate:"required,email,max=255"`
+	Description  string `json:"description" validate:"required,min=10,max=2000"`
+	ProfileImage string `json:"profile_image" validate:"omitempty"`
 }
 
 // UpdateVendorRequest - DTO untuk update vendor (semua field optional)
 type UpdateVendorRequestDto struct {
-	VendorName  *string `json:"vendor_name,omitempty" validate:"omitempty,min=3,max=255"`
-	Address     *string `json:"address,omitempty" validate:"omitempty,min=5,max=255"`
-	City        *string `json:"city,omitempty" validate:"omitempty,min=2,max=255"`
-	PhoneNumber *string `json:"phone_number,omitempty" validate:"omitempty,min=10,max=20"`
-	Email       *string `json:"email,omitempty" validate:"omitempty,email,max=255"`
-	Description *string `json:"description,omitempty" validate:"omitempty,min=10,max=2000"`
+	VendorName   *string `json:"vendor_name,omitempty" validate:"omitempty,min=3,max=255"`
+	Address      *string `json:"address,omitempty" validate:"omitempty,min=5,max=255"`
+	City         *string `json:"city,omitempty" validate:"omitempty,min=2,max=255"`
+	PhoneNumber  *string `json:"phone_number,omitempty" validate:"omitempty,min=10,max=20"`
+	Email        *string `json:"email,omitempty" validate:"omitempty,email,max=255"`
+	Description  *string `json:"description,omitempty" validate:"omitempty,min=10,max=2000"`
+	ProfileImage *string `json:"profile_image" validate:"omitempty"`
 }
 
 // UpdateVendorStatusRequest - DTO untuk update status vendor

@@ -86,6 +86,8 @@ func SetupAPIRoutes(
 		blockedDate.Post("/", blockedDateHandler.CreateBlockedDate)
 		blockedDate.Put("/:blockedDateId", blockedDateHandler.UpdateBlockedDate)
 		blockedDate.Delete("/:blockedDateId", blockedDateHandler.DeleteBlockedDate)
+
+		// resource
 	}
 
 }

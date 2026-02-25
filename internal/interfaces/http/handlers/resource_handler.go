@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"encoding/json"
+	"strconv"
 	"strings"
 
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/application/dto"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/services"
 	http "github.com/Ardnh/be-coworking-space-booking-app/internal/interfaces/http/responses"
+	validation_utils "github.com/Ardnh/be-coworking-space-booking-app/internal/utils/validator"
+	"github.com/Ardnh/be-coworking-space-booking-app/pkg/constants"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
@@ -63,7 +67,7 @@ func (h *ResourceHandlers) CreateResource(c *fiber.Ctx) error {
 
 	// ── 1. Parse field teks ──────────────────────────────────────────────────
 	// String
-	vendorId := strings.TrimSpace(c.FormValue("vandor_id"))
+	vendorId := strings.TrimSpace(c.FormValue("vendor_id"))
 	resourceTypeId := strings.TrimSpace(c.FormValue("resource_type_id"))
 	resourceName := strings.TrimSpace(c.FormValue("resource_name"))
 	location := strings.TrimSpace(c.FormValue("location"))
@@ -76,11 +80,45 @@ func (h *ResourceHandlers) CreateResource(c *fiber.Ctx) error {
 	capacityStr := strings.TrimSpace(c.FormValue("capacity"))
 	pricePerUnitStr := strings.TrimSpace(c.FormValue("price_per_unit"))
 
-	// Array
+	pricePerUnit, err := strconv.ParseFloat(pricePerUnitStr, 64)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	capacity, err := strconv.Atoi(capacityStr)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	// Array of blocked Date
 	blockedDateStr := strings.TrimSpace(c.FormValue("blocked_date"))
+	var blockedDates []*dto.CreateBlockedDateRequest
+	errParseBlockedDate := json.Unmarshal([]byte(blockedDateStr), &blockedDates)
+
+	if errParseBlockedDate != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
 
 	// Validasi field wajib
-	req := dto.CreateResourceRequestDto{}
+
+	req := dto.CreateResourceRequestDto{
+		VendorID:          vendorId,
+		ResourceTypeID:    resourceTypeId,
+		ResourceName:      resourceName,
+		Location:          &location,
+		Description:       &description,
+		OperationTimeFrom: operationTimeFrom,
+		OperationTimeTo:   operationTimeTo,
+		EndDate:           endDate,
+		Capacity:          capacity,
+		PricePerUnit:      pricePerUnit,
+		Status:            constants.ResourceStatusActive,
+		BlockedDates:      blockedDates,
+	}
+
+	if err := h.validator.Struct(&req); err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "Failed to create vendor", validation_utils.FormatValidationErrors(err))
+	}
 
 	// ── 2. Parse multiple file gambar ────────────────────────────────────────
 	form, err := c.MultipartForm()
@@ -93,46 +131,16 @@ func (h *ResourceHandlers) CreateResource(c *fiber.Ctx) error {
 		return http.NewErrorResponse(c, fiber.StatusBadRequest, "At least one image is required", nil)
 	}
 
-	result, errCreate := h.service.CreateResource(c.Context(), req, files)
+	result, errCreate := h.service.CreateResource(c.Context(), &req, files)
 	if errCreate != nil {
 		return http.NewErrorResponse(c, fiber.StatusBadRequest, errCreate.Error(), nil)
 	}
 
-	// // ── 3. Validasi & simpan setiap file ─────────────────────────────────────
-	// allowedExt := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
-	// const maxSize = 5 * 1024 * 1024 // 5 MB per file
+	if errCreate != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, errCreate.Error(), nil)
+	}
 
-	// var savedImages []string
-
-	// for _, file := range files {
-	// 	// Cek ekstensi
-	// 	ext := strings.ToLower(filepath.Ext(file.Filename))
-	// 	if !allowedExt[ext] {
-	// 		return http.NewErrorResponse(c, fiber.StatusBadRequest, fmt.Sprintf("Ekstensi file '%s' tidak diizinkan", ext), nil)
-	// 	}
-
-	// 	// Cek ukuran file
-	// 	if file.Size > maxSize {
-	// 		return http.NewErrorResponse(c, fiber.StatusBadRequest, fmt.Sprintf("File '%s' melebihi batas ukuran 5MB", file.Filename), nil)
-	// 	}
-
-	// 	// Generate nama file unik
-	// 	uniqueName := fmt.Sprintf("%d_%s_%s%s",
-	// 		time.Now().UnixNano(),
-	// 		uuid.New().String()[:8], // 8 char random
-	// 		strings.ReplaceAll(resourceName, " ", "_"),
-	// 		ext,
-	// 	)
-	// 	savePath := filepath.Join("uploads", uniqueName)
-
-	// 	// 	// Simpan file (upload to cloudinary)
-	// 	if err := c.SaveFile(file, savePath); err != nil {
-	// 		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
-	// 	}
-	// }
-
-	// ── 4. Buat objek produk & kembalikan respons ────────────────────────────
-	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully create resource", nil)
+	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully create resource", result)
 }
 
 func (h *ResourceHandlers) UpdateResource(c *fiber.Ctx) error {

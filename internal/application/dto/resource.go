@@ -1,7 +1,5 @@
 package dto
 
-import "github.com/Ardnh/be-coworking-space-booking-app/internal/application/dto"
-
 // ============== Response DTOs ==============
 type ResourceDto struct {
 	ResourceID         string   `json:"resource_id"`
@@ -42,18 +40,18 @@ type ResourceResponseDto struct {
 
 // ============== Request DTOs ==============
 type CreateResourceRequestDto struct {
-	VendorID          string                         `json:"vendor_id" validate:"required"`
-	ResourceTypeID    string                         `json:"resource_type_id" validate:"required"`
-	ResourceName      string                         `json:"resource_name" validate:"required,min=3"`
-	Description       *string                        `json:"description,omitempty"`
-	Capacity          int                            `json:"capacity" validate:"required,min=1"`
-	OperationTimeFrom string                         `json:"operation_time_from" validate:"required"`
-	OperationTimeTo   string                         `json:"operation_time_to" validate:"required"`
-	EndDate           string                         `json:"end_date" validate:"required"`
-	PricePerUnit      float64                        `json:"price_per_unit" validate:"required,gt=0"`
-	Location          *string                        `json:"location,omitempty"`
-	Status            string                         `json:"status,omitempty" validate:"omitempty,oneof=active inactive"`
-	BlockedDate       []dto.CreateBlockedDateRequest `json:"blocked_date,omitempty"`
+	VendorID          string                      `json:"vendor_id" validate:"required,uuid"`
+	ResourceTypeID    string                      `json:"resource_type_id" validate:"required,uuid"`
+	ResourceName      string                      `json:"resource_name" validate:"required,min=3"`
+	Description       *string                     `json:"description,omitempty"`
+	Capacity          int                         `json:"capacity" validate:"required,min=1"`
+	OperationTimeFrom string                      `json:"operation_time_from" validate:"required"`
+	OperationTimeTo   string                      `json:"operation_time_to" validate:"required"`
+	EndDate           string                      `json:"end_date" validate:"required"`
+	PricePerUnit      float64                     `json:"price_per_unit" validate:"required,gt=0"`
+	Location          *string                     `json:"location,omitempty"`
+	Status            string                      `json:"status,omitempty" validate:"omitempty,oneof=active inactive"`
+	BlockedDates      []*CreateBlockedDateRequest `json:"blocked_date,omitempty"`
 }
 
 type UpdateResourceRequestDto struct {

@@ -15,35 +15,37 @@ func ToVendorListDto(vendor []*entities.Vendor) []dto.VendorDto {
 
 func ToVendorDto(vendor *entities.Vendor) dto.VendorDto {
 	return dto.VendorDto{
-		VendorID:    vendor.VendorID.String(),
-		OwnerUserID: vendor.OwnerUserID.String(),
-		VendorName:  vendor.VendorName,
-		Address:     vendor.Address,
-		City:        vendor.City,
-		PhoneNumber: vendor.PhoneNumber,
-		Email:       vendor.Email,
-		Description: vendor.Description,
-		Rating:      vendor.Rating,
-		Status:      vendor.Status,
-		CreatedAt:   vendor.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		UpdatedAt:   vendor.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		VendorID:     vendor.VendorID.String(),
+		OwnerUserID:  vendor.OwnerUserID.String(),
+		VendorName:   vendor.VendorName,
+		Address:      vendor.Address,
+		City:         vendor.City,
+		PhoneNumber:  vendor.PhoneNumber,
+		Email:        vendor.Email,
+		Description:  vendor.Description,
+		Rating:       vendor.Rating,
+		Status:       vendor.Status,
+		ProfileImage: vendor.ProfileImage,
+		CreatedAt:    vendor.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		UpdatedAt:    vendor.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }
 
 func ToDetailVendorResponse(vendor *entities.Vendor) dto.VendorDto {
 	return dto.VendorDto{
-		VendorID:    vendor.VendorID.String(),
-		OwnerUserID: vendor.OwnerUserID.String(),
-		VendorName:  vendor.VendorName,
-		Address:     vendor.Address,
-		City:        vendor.City,
-		PhoneNumber: vendor.PhoneNumber,
-		Email:       vendor.Email,
-		Description: vendor.Description,
-		Rating:      vendor.Rating,
-		Status:      vendor.Status,
-		CreatedAt:   vendor.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		UpdatedAt:   vendor.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		VendorID:     vendor.VendorID.String(),
+		OwnerUserID:  vendor.OwnerUserID.String(),
+		VendorName:   vendor.VendorName,
+		Address:      vendor.Address,
+		City:         vendor.City,
+		PhoneNumber:  vendor.PhoneNumber,
+		Email:        vendor.Email,
+		Description:  vendor.Description,
+		Rating:       vendor.Rating,
+		Status:       vendor.Status,
+		ProfileImage: vendor.ProfileImage,
+		CreatedAt:    vendor.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		UpdatedAt:    vendor.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }
 
