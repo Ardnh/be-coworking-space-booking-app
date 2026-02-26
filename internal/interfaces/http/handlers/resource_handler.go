@@ -8,6 +8,7 @@ import (
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/application/dto"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/services"
 	http "github.com/Ardnh/be-coworking-space-booking-app/internal/interfaces/http/responses"
+	"github.com/Ardnh/be-coworking-space-booking-app/internal/utils/string_utils"
 	validation_utils "github.com/Ardnh/be-coworking-space-booking-app/internal/utils/validator"
 	"github.com/Ardnh/be-coworking-space-booking-app/pkg/constants"
 	"github.com/go-playground/validator/v10"
@@ -144,6 +145,61 @@ func (h *ResourceHandlers) CreateResource(c *fiber.Ctx) error {
 }
 
 func (h *ResourceHandlers) UpdateResource(c *fiber.Ctx) error {
+
+	resourceId := c.Params("resourceId", "")
+	if resourceId == "" {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "Resource Id is required", nil)
+	}
+
+	// ── 1. Parse field teks ──────────────────────────────────────────────────
+	// Number
+	capacityStr := string_utils.ToStringPtr(c.FormValue("capacity"))
+	pricePerUnitStr := string_utils.ToStringPtr(c.FormValue("price_per_unit"))
+
+	capacity := 1
+	if capacityStr != nil {
+		capacityParsed, err := strconv.Atoi(*capacityStr)
+		if err != nil {
+			return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+		}
+
+		capacity = capacityParsed
+	}
+
+	pricePerUnit := 0.0
+	if pricePerUnitStr != nil {
+		pricePerUnitParsed, err := strconv.ParseFloat(*pricePerUnitStr, 64)
+		if err != nil {
+			return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+		}
+
+		pricePerUnit = pricePerUnitParsed
+	}
+
+	// Array of blocked Date
+	blockedDateStr := strings.TrimSpace(c.FormValue("blocked_date"))
+	var blockedDates []*dto.CreateBlockedDateRequest
+	errParseBlockedDate := json.Unmarshal([]byte(blockedDateStr), &blockedDates)
+
+	if errParseBlockedDate != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, errParseBlockedDate.Error(), nil)
+	}
+
+	req := dto.UpdateResourceRequestDto{
+		ResourceName:      string_utils.ToStringPtr(c.FormValue("vendor_name")),
+		Location:          string_utils.ToStringPtr(c.FormValue("location")),
+		Description:       string_utils.ToStringPtr(c.FormValue("description")),
+		OperationTimeFrom: string_utils.ToStringPtr(c.FormValue("operation_time_from")),
+		OperationTimeTo:   string_utils.ToStringPtr(c.FormValue("operation_time_to")),
+		EndDate:           string_utils.ToStringPtr(c.FormValue("end_date")),
+		Capacity:          &capacity,
+		PricePerUnit:      &pricePerUnit,
+		BlockedDates:      blockedDates,
+	}
+
+	if err := h.validator.Struct(&req); err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "Failed to create vendor", validation_utils.FormatValidationErrors(err))
+	}
 
 	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully update resource", nil)
 }

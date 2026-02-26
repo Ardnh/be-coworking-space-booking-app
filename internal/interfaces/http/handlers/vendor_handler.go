@@ -7,6 +7,7 @@ import (
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/application/dto"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/services"
 	http "github.com/Ardnh/be-coworking-space-booking-app/internal/interfaces/http/responses"
+	"github.com/Ardnh/be-coworking-space-booking-app/internal/utils/string_utils"
 	validation_utils "github.com/Ardnh/be-coworking-space-booking-app/internal/utils/validator"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -115,7 +116,7 @@ func (h *VendorHandlers) GetAllVendors(c *fiber.Ctx) error {
 
 func (h *VendorHandlers) GetVendorByID(c *fiber.Ctx) error {
 
-	id := c.Params("id", "")
+	id := c.Params("vendorId", "")
 	if id == "" {
 		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
 	}
@@ -135,7 +136,7 @@ func (h *VendorHandlers) GetVendorByID(c *fiber.Ctx) error {
 
 func (h *VendorHandlers) GetVendorsResourcesByVendorID(c *fiber.Ctx) error {
 
-	id := c.Params("vendor_id", "")
+	id := c.Params("vendorId", "")
 	if id == "" {
 		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
 	}
@@ -202,25 +203,14 @@ func (h *VendorHandlers) UpdateVendor(c *fiber.Ctx) error {
 
 	// ── 1. Parse field teks ──────────────────────────────────────────────────
 	// String
-	vendorName := strings.TrimSpace(c.FormValue("vendor_name"))
-	address := strings.TrimSpace(c.FormValue("address"))
-	city := strings.TrimSpace(c.FormValue("city"))
-	phoneNumber := strings.TrimSpace(c.FormValue("phone_number"))
-	email := strings.TrimSpace(c.FormValue("email"))
-	description := strings.TrimSpace(c.FormValue("description"))
-	profileImage, err := c.FormFile("image")
-
-	if err != nil {
-		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
-	}
+	profileImage, _ := c.FormFile("image")
 
 	req := dto.UpdateVendorRequestDto{
-		VendorName:  &vendorName,
-		Address:     &address,
-		City:        &city,
-		PhoneNumber: &phoneNumber,
-		Email:       &email,
-		Description: &description,
+		VendorName:  string_utils.ToStringPtr(c.FormValue("vendor_name")),
+		Address:     string_utils.ToStringPtr(c.FormValue("address")),
+		City:        string_utils.ToStringPtr(c.FormValue("city")),
+		PhoneNumber: string_utils.ToStringPtr(c.FormValue("phone_number")),
+		Description: string_utils.ToStringPtr(c.FormValue("description")),
 	}
 
 	if err := h.validator.Struct(&req); err != nil {

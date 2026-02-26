@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/entities"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/repositories"
@@ -16,6 +18,11 @@ type VendorRepositoryImpl struct {
 	redis *redis.Client
 }
 
+type cachedVendorResult struct {
+	Data  []*entities.Vendor `json:"data"`
+	Total int                `json:"total"`
+}
+
 func NewVendorRepository(db *gorm.DB, redis *redis.Client) repositories.VendorRepository {
 	return &VendorRepositoryImpl{
 		db:    db,
@@ -24,6 +31,17 @@ func NewVendorRepository(db *gorm.DB, redis *redis.Client) repositories.VendorRe
 }
 
 func (r *VendorRepositoryImpl) GetAllVendors(ctx context.Context, vendorName string, city string, limit int, offset int, sortBy string, sortOrder string) ([]*entities.Vendor, int, error) {
+
+	cacheKey := fmt.Sprintf("resource_type:all:%s:%d:%d:%s:%s", vendorName, limit, offset, sortBy, sortOrder)
+
+	// Try get from Redis
+	cached, err := r.redis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var result cachedVendorResult
+		if jsonErr := json.Unmarshal([]byte(cached), &result); jsonErr == nil {
+			return result.Data, result.Total, nil
+		}
+	}
 
 	var vendor []*entities.Vendor
 	var total int64 = 0

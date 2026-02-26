@@ -132,12 +132,7 @@ func (s *VendorServiceImpl) uploadProfileImage(ctx context.Context, fh *multipar
 // Jika profileImage dikirim, gambar baru diupload ke Cloudinary terlebih dahulu.
 // Urutan proses: upload baru → update DB → hapus lama.
 // Jika update DB gagal, gambar baru di-rollback (dihapus dari Cloudinary).
-func (s *VendorServiceImpl) UpdateVendor(
-	ctx context.Context,
-	vendorID uuid.UUID,
-	profileImage *multipart.FileHeader,
-	vendor *dto.UpdateVendorRequestDto,
-) (*dto.VendorDto, error) {
+func (s *VendorServiceImpl) UpdateVendor(ctx context.Context, vendorID uuid.UUID, profileImage *multipart.FileHeader, vendor *dto.UpdateVendorRequestDto) (*dto.VendorDto, error) {
 
 	// ── 1. Ambil data vendor yang sudah ada ──
 	existingVendor, err := s.repo.GetVendorByID(ctx, vendorID)

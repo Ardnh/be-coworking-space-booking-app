@@ -131,17 +131,17 @@ func (r *ResourceRespositoryImpl) CreateResourceType(ctx context.Context, resour
 
 func (r *ResourceRespositoryImpl) UpdateResourceType(ctx context.Context, resourceType *entities.ResourceType) (*entities.ResourceType, error) {
 
-	result := r.db.WithContext(ctx).
+	errUpdate := r.db.WithContext(ctx).
 		Model(&entities.ResourceType{}).
 		Where("resource_type_id = ?", resourceType.ResourceTypeID).
-		Updates(resourceType)
+		Updates(resourceType).Error
 
-	if result.Error != nil {
+	if errUpdate != nil {
 
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		if errors.Is(errUpdate, gorm.ErrRecordNotFound) {
 			return nil, errConst.ErrNotFound
 		}
-		return nil, result.Error
+		return nil, errUpdate
 	}
 
 	var updatedResourceType entities.ResourceType

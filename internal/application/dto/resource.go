@@ -55,13 +55,15 @@ type CreateResourceRequestDto struct {
 }
 
 type UpdateResourceRequestDto struct {
-	ResourceName *string   `json:"resource_name,omitempty"`
-	ResourceType *string   `json:"resource_type,omitempty"`
-	CategoryID   *string   `json:"category_id,omitempty"`
-	Description  *string   `json:"description,omitempty"`
-	Capacity     *int      `json:"capacity,omitempty" validate:"omitempty,min=1"`
-	PricePerUnit *float64  `json:"price_per_unit,omitempty" validate:"omitempty,gt=0"`
-	Images       []*string `json:"images,omitempty"`
-	Location     *string   `json:"location,omitempty"`
-	Status       *string   `json:"status,omitempty" validate:"omitempty,oneof=active inactive"`
+	ResourceName      *string   `json:"resource_name,omitempty"`
+	ResourceType      *string   `json:"resource_type,omitempty"`
+	CategoryID        *string   `json:"category_id,omitempty"`
+	Description       *string   `json:"description,omitempty"`
+	OperationTimeFrom *string   `json:"operation_time_from,omitempty"`
+	OperationTimeTo   *string   `json:"operation_time_to,omitempty"`
+	EndDate           *string   `json:"end_date,omitempty"`
+	Capacity          *int      `json:"capacity,omitempty" validate:"omitempty,min=1"`
+	PricePerUnit      *float64  `json:"price_per_unit,omitempty" validate:"omitempty,gt=0"`
+	Images            []*string `json:"images,omitempty"`
+	Location          *string   `json:"location,omitempty"`
 }

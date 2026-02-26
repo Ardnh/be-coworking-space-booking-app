@@ -10,10 +10,10 @@ type BlockedDate struct {
 	BlockID    uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	ResourceID uuid.UUID `gorm:"type:uuid;not null;index:idx_blocked_dates_resource_id;index:idx_blocked_dates_date_range,priority:1"`
 	Date       time.Time `gorm:"type:date;not null;index:idx_blocked_dates_start_date;index:idx_blocked_dates_date_range,priority:2"`
-	TimeFrom   time.Time `gorm:"type:time;not null"`
-	TimeTo     time.Time `gorm:"type:time;not null"`
+	TimeFrom   string    `gorm:"type:time;not null"`
+	TimeTo     string    `gorm:"type:time;not null"`
 	Reason     string    `gorm:"type:text;not null"`
-	CreatedBy  uuid.UUID `gorm:"type:uuid;not null"`
+	CreatedBy  string    `gorm:"type:varchar(255);not null"`
 
 	// Relationships
 	Resource *Resource `gorm:"foreignKey:ResourceID;constraint:OnDelete:CASCADE"`

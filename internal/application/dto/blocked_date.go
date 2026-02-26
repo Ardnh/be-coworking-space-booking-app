@@ -8,13 +8,13 @@ import (
 
 // ============== Response DTOs ==============
 type BlockedDate struct {
-	BlockID    uuid.UUID `json:"block_id"`
-	ResourceID uuid.UUID `json:"resource_id"`
+	BlockID    string    `json:"block_id"`
+	ResourceID string    `json:"resource_id"`
 	Date       string    `json:"date"`
 	TimeFrom   string    `json:"time_from"`
 	TimeTo     string    `json:"time_to"`
 	Reason     string    `json:"reason"`
-	CreatedBy  uuid.UUID `json:"created_by"`
+	CreatedBy  string    `json:"created_by"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
@@ -26,6 +26,7 @@ type CreateBlockedDateRequest struct {
 	TimeFrom   string    `json:"time_from" validate:"required,datetime=15:04"`
 	TimeTo     string    `json:"time_to" validate:"required,datetime=15:04,gtfield=TimeFrom"`
 	Reason     string    `json:"reason" validate:"required,min=1,max=500"`
+	CreatedBy  string    `json:"created_by" validate:"required"`
 }
 
 type UpdateBlockedDateRequest struct {
