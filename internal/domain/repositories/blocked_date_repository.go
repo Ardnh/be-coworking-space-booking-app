@@ -8,6 +8,7 @@ import (
 )
 
 type BlockedDateRepository interface {
+	GetBlockedDateById(ctx context.Context, blockedDateId uuid.UUID) (*entities.BlockedDate, error)
 	GetBlockedDateByResourceId(ctx context.Context, resourceId uuid.UUID) ([]*entities.BlockedDate, error)
 	CreateBlockedDate(ctx context.Context, blockedDate *entities.BlockedDate) (*entities.BlockedDate, error)
 	UpdateBlockedDate(ctx context.Context, blockedDate *entities.BlockedDate) (*entities.BlockedDate, error)

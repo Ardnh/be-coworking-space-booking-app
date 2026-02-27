@@ -14,6 +14,7 @@ import (
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/repositories"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/services"
 	cldHelper "github.com/Ardnh/be-coworking-space-booking-app/internal/utils/cloudinary"
+	"github.com/Ardnh/be-coworking-space-booking-app/internal/utils/helpers"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/google/uuid"
 )
@@ -98,4 +99,122 @@ func (s *ResourceServiceImpl) CreateResource(ctx context.Context, req *dto.Creat
 
 	resourceDto := mapper.ToResourceDTO(result)
 	return resourceDto, nil
+}
+
+func (s *ResourceServiceImpl) GetAllResources(ctx context.Context, filter *dto.ResourceFilterDto) ([]*dto.ResourceDto, int, error) {
+
+	result, totalItems, err := s.repo.GetAllResources(ctx, filter.ResourceName, filter.ResourceTypeId, filter.OperationTimeStart, filter.OperationTimeEnd, filter.SortBy, filter.SortOrder, filter.PageSize, filter.Page)
+	if err != nil {
+		return nil, 0, fmt.Errorf("gagal mendapatkan resource: %w", err)
+	}
+
+	resourceDtos := mapper.ToResourceListDTO(result)
+	return resourceDtos, totalItems, nil
+}
+
+func (s *ResourceServiceImpl) GetResourceByVendorId(ctx context.Context, vendorId uuid.UUID) ([]*dto.ResourceDto, error) {
+
+	result, err := s.repo.GetResourceByVendorId(ctx, vendorId)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceDtos := mapper.ToResourceListDTO(result)
+	return resourceDtos, nil
+}
+
+func (s *ResourceServiceImpl) GetResourceById(ctx context.Context, resourceId uuid.UUID) (*dto.ResourceDto, error) {
+
+	result, err := s.repo.GetResourceById(ctx, resourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceDto := mapper.ToResourceDTO(result)
+	return resourceDto, nil
+}
+
+func (s *ResourceServiceImpl) UpdateResource(ctx context.Context, resourceId uuid.UUID, newResourceImage []*multipart.FileHeader, req *dto.UpdateResourceRequestDto) (*dto.ResourceDto, error) {
+
+	existingResource, err := s.repo.GetResourceById(ctx, resourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.ResourceName != nil {
+		existingResource.ResourceName = *req.ResourceName
+	}
+
+	if req.Description != nil {
+		existingResource.Description = req.Description
+	}
+
+	if req.ResourceTypeID != nil {
+		existingResource.ResourceTypeID = *req.ResourceTypeID
+	}
+
+	if req.Capacity != nil {
+		existingResource.Capacity = *req.Capacity
+	}
+
+	if req.PricePerUnit != nil {
+		existingResource.PricePerUnit = *req.PricePerUnit
+	}
+
+	if req.Location != nil {
+		existingResource.Location = req.Location
+	}
+
+	if req.OperationTimeFrom != nil {
+		existingResource.OperationTimeFrom = *req.OperationTimeFrom
+	}
+
+	if req.OperationTimeTo != nil {
+		existingResource.OperationTimeTo = *req.OperationTimeTo
+	}
+
+	if req.EndDate != nil {
+		parsedTime, err := time.Parse(time.RFC3339, *req.EndDate)
+		if err != nil {
+			return nil, err
+		}
+
+		existingResource.EndDate = parsedTime
+	}
+
+	retainedImages := req.Images
+	oldImages, err := existingResource.Images.Value()
+	if err != nil {
+		return nil, err
+	}
+
+	if oldImages != nil {
+		oldImagesArr := oldImages.([]string)
+		for _, img := range oldImagesArr {
+			if !helpers.Contains(retainedImages, img) {
+				err := cldHelper.DeleteFromCloudinary(ctx, s.cld, img)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	err = s.repo.UpdateResource(ctx, existingResource)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceDto := mapper.ToResourceDTO(existingResource)
+	return resourceDto, nil
+}
+
+func (s *ResourceServiceImpl) DeleteResource(ctx context.Context, resourceId uuid.UUID) error {
+
+	err := s.repo.DeleteResource(ctx, resourceId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

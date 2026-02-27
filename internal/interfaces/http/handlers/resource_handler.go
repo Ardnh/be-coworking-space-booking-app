@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"mime/multipart"
 	"strconv"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/Ardnh/be-coworking-space-booking-app/pkg/constants"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -42,26 +44,96 @@ func (h *ResourceHandlers) GetReviewsByResourceId(c *fiber.Ctx) error {
 	// 	return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
 	// }
 
-	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully get vendor", nil)
+	return http.NewSuccessResponse(c, fiber.StatusOK, "Not Implemented yet", nil)
 }
 
 func (h *ResourceHandlers) GetResourceById(c *fiber.Ctx) error {
-	// id := c.Params("resourceId", "")
-	// if id == "" {
-	// 	return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
-	// }
 
-	// resourceIdUUID, err := uuid.Parse(id)
-	// if err != nil {
-	// 	return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
-	// }
+	id := c.Params("resourceId", "")
+	if id == "" {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "ID is required", nil)
+	}
 
-	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully get vendor", nil)
+	resourceIdUUID, err := uuid.Parse(id)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	result, err := h.service.GetResourceById(c.Context(), resourceIdUUID)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully get resource by id", result)
 }
 
 func (h *ResourceHandlers) GetResource(c *fiber.Ctx) error {
 
-	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully get vendor", nil)
+	limit, err := strconv.Atoi(c.Query("pageSize", "10"))
+	if err != nil || limit <= 0 {
+		limit = 10
+	}
+	if limit > 50 {
+		limit = 50
+	}
+
+	// 2. Parse query parameters page
+	pageStr := c.Query("page", "1")
+	pageInt := 1
+	if pageStr != "" {
+		page, err := strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			pageInt = 1
+		} else {
+			pageInt = page
+		}
+	}
+
+	sortBy := c.Query("sort_by", "created_at")
+	sortOrder := c.Query("sort_order", "DESC")
+
+	sortOrder = strings.ToUpper(sortOrder)
+	if sortOrder != "ASC" && sortOrder != "DESC" {
+		sortOrder = "DESC"
+	}
+
+	// 3. Optional: Get additional filters
+	resourceName := c.Query("resource_name", "")
+	resourceTypeId := c.Query("resource_type_id", "")
+	operationTimeStart := c.Query("operation_time_start", "")
+	operationTimeEnd := c.Query("operation_time_end", "")
+
+	resourceFilter := dto.ResourceFilterDto{
+		ResourceName:       resourceName,
+		ResourceTypeId:     resourceTypeId,
+		OperationTimeStart: operationTimeStart,
+		OperationTimeEnd:   operationTimeEnd,
+		Page:               pageInt,
+		PageSize:           limit,
+		SortBy:             sortBy,
+		SortOrder:          sortOrder,
+	}
+
+	result, totalItems, err := h.service.GetAllResources(c.Context(), &resourceFilter)
+	if err != nil {
+		return http.HandleError(c, err)
+	}
+
+	totalPages := 0
+	if totalItems > 0 {
+		totalPages = (totalItems + limit - 1) / limit
+	}
+
+	pagination := http.Pagination{
+		CurrentPage: pageInt,
+		PageSize:    limit,
+		TotalItems:  totalItems,
+		TotalPages:  totalPages,
+		HasNext:     pageInt < totalPages,
+		HasPrevious: pageInt > 1,
+	}
+
+	return http.NewSuccessResponseWithPagination(c, fiber.StatusOK, "Successfully retrieved resources", result, pagination)
 }
 
 func (h *ResourceHandlers) CreateResource(c *fiber.Ctx) error {
@@ -101,7 +173,6 @@ func (h *ResourceHandlers) CreateResource(c *fiber.Ctx) error {
 	}
 
 	// Validasi field wajib
-
 	req := dto.CreateResourceRequestDto{
 		VendorID:          vendorId,
 		ResourceTypeID:    resourceTypeId,
@@ -176,13 +247,21 @@ func (h *ResourceHandlers) UpdateResource(c *fiber.Ctx) error {
 		pricePerUnit = pricePerUnitParsed
 	}
 
-	// Array of blocked Date
-	blockedDateStr := strings.TrimSpace(c.FormValue("blocked_date"))
-	var blockedDates []*dto.CreateBlockedDateRequest
-	errParseBlockedDate := json.Unmarshal([]byte(blockedDateStr), &blockedDates)
+	// Parse resource images
+	resourceImagesStr := string_utils.ToStringPtr(c.FormValue("images"))
+	var resourceImage []*string
+	if resourceImagesStr != nil {
+		resourceImages := strings.Split(*resourceImagesStr, ",")
+		for _, image := range resourceImages {
+			resourceImage = append(resourceImage, &image)
+		}
+	}
 
-	if errParseBlockedDate != nil {
-		return http.NewErrorResponse(c, fiber.StatusBadRequest, errParseBlockedDate.Error(), nil)
+	// Parse new image
+	form, _ := c.MultipartForm()
+	var newImageFiles []*multipart.FileHeader
+	if form != nil && form.File["new_images"] != nil {
+		newImageFiles = form.File["new_images"]
 	}
 
 	req := dto.UpdateResourceRequestDto{
@@ -194,17 +273,42 @@ func (h *ResourceHandlers) UpdateResource(c *fiber.Ctx) error {
 		EndDate:           string_utils.ToStringPtr(c.FormValue("end_date")),
 		Capacity:          &capacity,
 		PricePerUnit:      &pricePerUnit,
-		BlockedDates:      blockedDates,
+		Images:            resourceImage,
+	}
+
+	resourceIdUuid, err := uuid.Parse(resourceId)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
 	}
 
 	if err := h.validator.Struct(&req); err != nil {
 		return http.NewErrorResponse(c, fiber.StatusBadRequest, "Failed to create vendor", validation_utils.FormatValidationErrors(err))
 	}
 
-	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully update resource", nil)
+	result, err := h.service.UpdateResource(c.Context(), resourceIdUuid, newImageFiles, &req)
+	if err != nil {
+		return http.HandleError(c, err)
+	}
+
+	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully update resource", result)
 }
 
 func (h *ResourceHandlers) DeleteResource(c *fiber.Ctx) error {
+
+	resourceId := c.Params("resourceId", "")
+	if resourceId == "" {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, "Resource Id is required", nil)
+	}
+
+	resourceIduuId, err := uuid.Parse(resourceId)
+	if err != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	}
+
+	errDelete := h.service.DeleteResource(c.Context(), resourceIduuId)
+	if errDelete != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, errDelete.Error(), nil)
+	}
 
 	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully delete resource", nil)
 }

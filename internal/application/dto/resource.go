@@ -1,5 +1,7 @@
 package dto
 
+import "github.com/google/uuid"
+
 // ============== Response DTOs ==============
 type ResourceDto struct {
 	ResourceID         string   `json:"resource_id"`
@@ -55,15 +57,27 @@ type CreateResourceRequestDto struct {
 }
 
 type UpdateResourceRequestDto struct {
-	ResourceName      *string   `json:"resource_name,omitempty"`
-	ResourceType      *string   `json:"resource_type,omitempty"`
-	CategoryID        *string   `json:"category_id,omitempty"`
-	Description       *string   `json:"description,omitempty"`
-	OperationTimeFrom *string   `json:"operation_time_from,omitempty"`
-	OperationTimeTo   *string   `json:"operation_time_to,omitempty"`
-	EndDate           *string   `json:"end_date,omitempty"`
-	Capacity          *int      `json:"capacity,omitempty" validate:"omitempty,min=1"`
-	PricePerUnit      *float64  `json:"price_per_unit,omitempty" validate:"omitempty,gt=0"`
-	Images            []*string `json:"images,omitempty"`
-	Location          *string   `json:"location,omitempty"`
+	ResourceName      *string    `json:"resource_name,omitempty"`
+	ResourceTypeID    *uuid.UUID `json:"resource_type_id,omitempty"`
+	Description       *string    `json:"description,omitempty"`
+	OperationTimeFrom *string    `json:"operation_time_from,omitempty"`
+	OperationTimeTo   *string    `json:"operation_time_to,omitempty"`
+	EndDate           *string    `json:"end_date,omitempty"`
+	Capacity          *int       `json:"capacity,omitempty" validate:"omitempty,min=1"`
+	PricePerUnit      *float64   `json:"price_per_unit,omitempty" validate:"omitempty,gt=0"`
+	Images            []*string  `json:"images,omitempty"`
+	Location          *string    `json:"location,omitempty"`
+}
+
+// ============== Filter ==============
+type ResourceFilterDto struct {
+	ResourceName       string `json:"resource_name"`
+	ResourceTypeId     string `json:"resource_type_id"`
+	OperationTimeStart string `json:"operation_time_start"`
+	OperationTimeEnd   string `json:"operation_time_end"`
+	SortBy             string `json:"sort_by"`
+	SortOrder          string `json:"sort_order"`
+	PageSize           int    `json:"page_size"`
+	Page               int    `json:"page_number"`
+	Limit              int    `json:"limit"`
 }

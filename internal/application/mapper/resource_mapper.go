@@ -5,6 +5,14 @@ import (
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/entities"
 )
 
+func ToResourceListDTO(resources []*entities.Resource) []*dto.ResourceDto {
+	resourceDtos := make([]*dto.ResourceDto, len(resources))
+	for i, resource := range resources {
+		resourceDtos[i] = ToResourceDTO(resource)
+	}
+	return resourceDtos
+}
+
 func ToResourceDTO(resource *entities.Resource) *dto.ResourceDto {
 	return &dto.ResourceDto{
 		ResourceID:         resource.ResourceID.String(),
