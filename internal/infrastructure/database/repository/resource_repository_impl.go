@@ -23,7 +23,7 @@ func NewResourceRespository(db *gorm.DB, redis *redis.Client) repositories.Resou
 	}
 }
 
-func (r *ResourceRespositoryImpl) GetAllResources(ctx context.Context, resourceName string, resourceTypeId string, operationTimeStart string, operationTimeEnd string, sortBy string, sortOrder string, pageSize int, page int) ([]*entities.Resource, error) {
+func (r *ResourceRespositoryImpl) GetAllResources(ctx context.Context, resourceName string, resourceTypeId string, operationTimeStart string, operationTimeEnd string, sortBy string, sortOrder string, pageSize int, page int) ([]*entities.Resource, int, error) {
 	var resources []*entities.Resource
 
 	baseQuery := r.db.WithContext(ctx).Model(&entities.Resource{})
@@ -63,10 +63,10 @@ func (r *ResourceRespositoryImpl) GetAllResources(ctx context.Context, resourceN
 
 	// Execute query
 	if err := baseQuery.Find(&resources).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return resources, nil
+	return resources, 0, nil
 }
 
 func (r *ResourceRespositoryImpl) GetResourceByVendorId(ctx context.Context, vendorId uuid.UUID) ([]*entities.Resource, error) {

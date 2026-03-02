@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/application/dto"
@@ -14,11 +15,13 @@ import (
 
 type UserServiceImpl struct {
 	repo repositories.UsersRepository
+	log  *logrus.Logger
 }
 
-func NewUserService(repo repositories.UsersRepository) services.UserService {
+func NewUserService(repo repositories.UsersRepository, log *logrus.Logger) services.UserService {
 	return &UserServiceImpl{
 		repo: repo,
+		log:  log,
 	}
 }
 

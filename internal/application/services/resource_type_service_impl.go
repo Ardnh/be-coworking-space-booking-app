@@ -10,15 +10,18 @@ import (
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/repositories"
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/domain/services"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type ResourceTypeServiceImpl struct {
 	repo repositories.ResourceTypeRepository
+	log  *logrus.Logger
 }
 
-func NewResourceTypeService(repo repositories.ResourceTypeRepository) services.ResourceTypeService {
+func NewResourceTypeService(repo repositories.ResourceTypeRepository, log *logrus.Logger) services.ResourceTypeService {
 	return &ResourceTypeServiceImpl{
 		repo: repo,
+		log:  log,
 	}
 }
 

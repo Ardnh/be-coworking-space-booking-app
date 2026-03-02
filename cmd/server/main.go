@@ -76,14 +76,16 @@ func main() {
 	resourceRepository := repository.NewResourceRespository(db, redisDb)
 	resourceTypeRepository := repository.NewResourceType(db, redisDb)
 	blockedDateRepository := repository.NewBlockedDateRepository(db, redisDb)
+	bookingRepostory := repository.NewBookingRepostory(db, redisDb)
 
 	// Service
-	userService := service.NewUserService(userRepository)
-	authService := service.NewAuthService(authRepository)
-	vendorService := service.NewVendorService(vendorRepository, cld)
-	resourceService := service.NewResourceService(resourceRepository, cld)
-	resourceTypeService := service.NewResourceTypeService(resourceTypeRepository)
-	blockedDateService := service.NewBlockedDateService(blockedDateRepository)
+	userService := service.NewUserService(userRepository, logger)
+	authService := service.NewAuthService(authRepository, logger)
+	vendorService := service.NewVendorService(vendorRepository, cld, logger)
+	resourceService := service.NewResourceService(resourceRepository, cld, logger)
+	resourceTypeService := service.NewResourceTypeService(resourceTypeRepository, logger)
+	blockedDateService := service.NewBlockedDateService(blockedDateRepository, logger)
+	bookingService := service.NewBookingRepository(bookingRepostory, logger)
 
 	// Handler
 	userHandler := handlers.NewUserHandlers(userService, validator, logger)
@@ -92,6 +94,7 @@ func main() {
 	resourcehandler := handlers.NewResourceHandler(resourceService, validator, logger)
 	resourceTypeHandler := handlers.NewResourceTypeHandlers(resourceTypeService, validator, logger)
 	blockedDateHandler := handlers.NewBlockedDateHandlers(blockedDateService, validator, logger)
+	bookingHandler := handlers.NewBookingHandler(bookingService, validator, logger)
 
 	// Routes
 	routes.SetupAPIRoutes(
@@ -104,6 +107,7 @@ func main() {
 		resourcehandler,
 		resourceTypeHandler,
 		blockedDateHandler,
+		bookingHandler,
 	)
 
 	portListen := fmt.Sprintf(":%s", cfg.App.Port)

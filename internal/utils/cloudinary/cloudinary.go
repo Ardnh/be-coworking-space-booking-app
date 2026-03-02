@@ -43,8 +43,8 @@ func DeleteFromCloudinary(ctx context.Context, cld *cloudinary.Cloudinary, publi
 }
 
 // rollbackUploads — hapus file dari Cloudinary jika ada kegagalan
-func RollbackUploads(ctx context.Context, cld *cloudinary.Cloudinary, urls []string) {
+func RollbackUploads(ctx context.Context, cld *cloudinary.Cloudinary, urls []*string) {
 	for _, url := range urls {
-		_ = DeleteFromCloudinary(ctx, cld, url)
+		_ = DeleteFromCloudinary(ctx, cld, *url)
 	}
 }

@@ -18,6 +18,7 @@ func SetupAPIRoutes(
 	resourceHandler *handlers.ResourceHandlers,
 	resourceTypeHandler *handlers.ResourceTypeHandlers,
 	blockedDateHandler *handlers.BlockedDateHandlers,
+	bookingHandler *handlers.BookingHandler,
 ) {
 
 	// Middleware
@@ -87,7 +88,11 @@ func SetupAPIRoutes(
 		blockedDate.Put("/:blockedDateId", blockedDateHandler.UpdateBlockedDate)
 		blockedDate.Delete("/:blockedDateId", blockedDateHandler.DeleteBlockedDate)
 
-		// resource
+		// Resource
+		resource := protected.Group("/resources", casbinMiddleware.Authorize())
+
+		// Booking
+		booking := protected.Group("/booking", casbinMiddleware.Authorize())
 	}
 
 }

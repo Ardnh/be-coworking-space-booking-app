@@ -4,21 +4,21 @@ import "github.com/google/uuid"
 
 // ============== Response DTOs ==============
 type ResourceDto struct {
-	ResourceID         string   `json:"resource_id"`
-	VendorID           string   `json:"vendor_id"`
-	ResourceName       string   `json:"resource_name"`
-	ResourceTypeID     string   `json:"resource_type_id"`
-	Description        *string  `json:"description,omitempty"`
-	Capacity           int      `json:"capacity"`
-	OperationTimeStart string   `json:"operation_time_start"`
-	OperationTimeEnd   string   `json:"operation_time_end"`
-	EndDate            string   `json:"end_date"`
-	PricePerUnit       float64  `json:"price_per_unit"`
-	Images             []string `json:"images,omitempty"`
-	Location           *string  `json:"location,omitempty"`
-	Status             string   `json:"status"`
-	CreatedAt          string   `json:"created_at"`
-	UpdatedAt          string   `json:"updated_at"`
+	ResourceID         string    `json:"resource_id"`
+	VendorID           string    `json:"vendor_id"`
+	ResourceName       string    `json:"resource_name"`
+	ResourceTypeID     string    `json:"resource_type_id"`
+	Description        *string   `json:"description,omitempty"`
+	Capacity           int       `json:"capacity"`
+	OperationTimeStart string    `json:"operation_time_start"`
+	OperationTimeEnd   string    `json:"operation_time_end"`
+	EndDate            string    `json:"end_date"`
+	PricePerUnit       float64   `json:"price_per_unit"`
+	Images             []*string `json:"images,omitempty"`
+	Location           *string   `json:"location,omitempty"`
+	Status             string    `json:"status"`
+	CreatedAt          string    `json:"created_at"`
+	UpdatedAt          string    `json:"updated_at"`
 }
 
 type ResourceResponseDto struct {

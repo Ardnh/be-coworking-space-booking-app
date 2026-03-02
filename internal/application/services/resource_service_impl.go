@@ -17,17 +17,20 @@ import (
 	"github.com/Ardnh/be-coworking-space-booking-app/internal/utils/helpers"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type ResourceServiceImpl struct {
 	repo repositories.ResourceRepository
 	cld  *cloudinary.Cloudinary
+	log  *logrus.Logger
 }
 
-func NewResourceService(repo repositories.ResourceRepository, cld *cloudinary.Cloudinary) services.ResourceService {
+func NewResourceService(repo repositories.ResourceRepository, cld *cloudinary.Cloudinary, log *logrus.Logger) services.ResourceService {
 	return &ResourceServiceImpl{
 		repo: repo,
 		cld:  cld,
+		log:  log,
 	}
 }
 
@@ -48,7 +51,7 @@ func (s *ResourceServiceImpl) CreateResource(ctx context.Context, req *dto.Creat
 	}
 
 	// === 2. Upload semua file ke Cloudinary ===
-	var uploadedURLs []string
+	var uploadedURLs []*string
 	folder := fmt.Sprintf("resources/%s", req.VendorID)
 
 	for _, fh := range imageFiles {
@@ -58,7 +61,7 @@ func (s *ResourceServiceImpl) CreateResource(ctx context.Context, req *dto.Creat
 			cldHelper.RollbackUploads(ctx, s.cld, uploadedURLs)
 			return nil, fmt.Errorf("gagal upload '%s': %w", fh.Filename, err)
 		}
-		uploadedURLs = append(uploadedURLs, url)
+		uploadedURLs = append(uploadedURLs, &url)
 	}
 
 	vendorIdUUID, err := uuid.Parse(req.VendorID)
@@ -182,17 +185,14 @@ func (s *ResourceServiceImpl) UpdateResource(ctx context.Context, resourceId uui
 		existingResource.EndDate = parsedTime
 	}
 
-	retainedImages := req.Images
-	oldImages, err := existingResource.Images.Value()
-	if err != nil {
-		return nil, err
-	}
+	retainedImages := req.Images         // Urls from frontend
+	oldImages := existingResource.Images // Urls from database
 
 	if oldImages != nil {
-		oldImagesArr := oldImages.([]string)
+		oldImagesArr := oldImages
 		for _, img := range oldImagesArr {
-			if !helpers.Contains(retainedImages, img) {
-				err := cldHelper.DeleteFromCloudinary(ctx, s.cld, img)
+			if !helpers.Contains(retainedImages, *img) {
+				err := cldHelper.DeleteFromCloudinary(ctx, s.cld, *img)
 				if err != nil {
 					return nil, err
 				}
@@ -200,12 +200,33 @@ func (s *ResourceServiceImpl) UpdateResource(ctx context.Context, resourceId uui
 		}
 	}
 
-	err = s.repo.UpdateResource(ctx, existingResource)
+	// Upload newResourceImage ke Cloudinary
+	var uploadedNewImageUrls []*string
+	if len(newResourceImage) > 0 {
+		folder := fmt.Sprintf("resources/%s", existingResource.VendorID)
+		for _, img := range newResourceImage {
+			url, err := cldHelper.UploadFile(ctx, s.cld, img, folder)
+			if err != nil {
+				// Rollback: hapus file yang sudah terupload
+				cldHelper.RollbackUploads(ctx, s.cld, uploadedNewImageUrls)
+				return nil, fmt.Errorf("gagal upload '%s': %w", img.Filename, err)
+			}
+			uploadedNewImageUrls = append(uploadedNewImageUrls, &url)
+		}
+	}
+
+	// Ambil URL hasil upload, append ke retainedImages
+	retainedImages = append(retainedImages, uploadedNewImageUrls...)
+
+	// Update existingResource.Images dengan retainedImages terbaru
+	existingResource.Images = retainedImages
+
+	result, err := s.repo.UpdateResource(ctx, existingResource)
 	if err != nil {
 		return nil, err
 	}
 
-	resourceDto := mapper.ToResourceDTO(existingResource)
+	resourceDto := mapper.ToResourceDTO(result)
 	return resourceDto, nil
 }
 

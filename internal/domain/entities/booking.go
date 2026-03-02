@@ -11,8 +11,8 @@ type Booking struct {
 	UserID        uuid.UUID       `gorm:"type:uuid;not null;index:idx_bookings_user_id;index:idx_bookings_user_status,priority:1"`
 	ResourceID    uuid.UUID       `gorm:"type:uuid;not null;index:idx_bookings_resource_id;index:idx_bookings_resource_date,priority:1;index:idx_bookings_resource_date_time,priority:1"`
 	BookingDate   time.Time       `gorm:"type:date;not null;index:idx_bookings_booking_date;index:idx_bookings_resource_date,priority:2;index:idx_bookings_resource_date_time,priority:2"`
-	StartTime     time.Time       `gorm:"type:time;not null;index:idx_bookings_resource_date_time,priority:3"`
-	EndTime       time.Time       `gorm:"type:time;not null;index:idx_bookings_resource_date_time,priority:4"`
+	TimeFrom      time.Time       `gorm:"type:time;not null;index:idx_bookings_resource_date_time,priority:3"`
+	TimeTo        time.Time       `gorm:"type:time;not null;index:idx_bookings_resource_date_time,priority:4"`
 	Duration      BookingDuration `gorm:"type:interval;not null"`
 	TotalPrice    float64         `gorm:"type:decimal(10,2);not null;check:total_price > 0"`
 	BookingStatus string          `gorm:"type:varchar(20);not null;default:'pending';index:idx_bookings_booking_status;index:idx_bookings_user_status,priority:2;check:booking_status IN ('pending','confirmed','cancelled','completed','rejected')"`

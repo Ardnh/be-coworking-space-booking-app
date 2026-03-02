@@ -151,25 +151,23 @@ func (h *ResourceHandlers) CreateResource(c *fiber.Ctx) error {
 
 	// Number
 	capacityStr := strings.TrimSpace(c.FormValue("capacity"))
-	pricePerUnitStr := strings.TrimSpace(c.FormValue("price_per_unit"))
-
-	pricePerUnit, err := strconv.ParseFloat(pricePerUnitStr, 64)
-	if err != nil {
-		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	capacity, errParseCapacity := strconv.Atoi(capacityStr)
+	if errParseCapacity != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, errParseCapacity.Error(), nil)
 	}
 
-	capacity, err := strconv.Atoi(capacityStr)
-	if err != nil {
-		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+	pricePerUnitStr := strings.TrimSpace(c.FormValue("price_per_unit"))
+	pricePerUnit, errParsePriceUnit := strconv.ParseFloat(pricePerUnitStr, 64)
+	if errParsePriceUnit != nil {
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, errParsePriceUnit.Error(), nil)
 	}
 
 	// Array of blocked Date
 	blockedDateStr := strings.TrimSpace(c.FormValue("blocked_date"))
 	var blockedDates []*dto.CreateBlockedDateRequest
 	errParseBlockedDate := json.Unmarshal([]byte(blockedDateStr), &blockedDates)
-
 	if errParseBlockedDate != nil {
-		return http.NewErrorResponse(c, fiber.StatusBadRequest, err.Error(), nil)
+		return http.NewErrorResponse(c, fiber.StatusBadRequest, errParseBlockedDate.Error(), nil)
 	}
 
 	// Validasi field wajib
@@ -204,10 +202,6 @@ func (h *ResourceHandlers) CreateResource(c *fiber.Ctx) error {
 	}
 
 	result, errCreate := h.service.CreateResource(c.Context(), &req, files)
-	if errCreate != nil {
-		return http.NewErrorResponse(c, fiber.StatusBadRequest, errCreate.Error(), nil)
-	}
-
 	if errCreate != nil {
 		return http.NewErrorResponse(c, fiber.StatusBadRequest, errCreate.Error(), nil)
 	}
@@ -247,13 +241,12 @@ func (h *ResourceHandlers) UpdateResource(c *fiber.Ctx) error {
 		pricePerUnit = pricePerUnitParsed
 	}
 
-	// Parse resource images
+	// Parse retain resource images
 	resourceImagesStr := string_utils.ToStringPtr(c.FormValue("images"))
 	var resourceImage []*string
 	if resourceImagesStr != nil {
-		resourceImages := strings.Split(*resourceImagesStr, ",")
-		for _, image := range resourceImages {
-			resourceImage = append(resourceImage, &image)
+		for image := range strings.SplitSeq(*resourceImagesStr, ",") {
+			resourceImage = append(resourceImage, string_utils.ToStringPtr(image))
 		}
 	}
 
