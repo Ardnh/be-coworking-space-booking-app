@@ -65,7 +65,7 @@ func SetupAPIRoutes(
 
 		// Resource Routes
 		resources := protected.Group("/resources", casbinMiddleware.Authorize())
-		resources.Get("/", resourceHandler.GetResource)
+		resources.Get("/", resourceHandler.GetResources)
 		resources.Get("/:resourceId", resourceHandler.GetResourceById)
 		resources.Get("/:resourceId/reviews", resourceHandler.GetReviewsByResourceId)
 		resources.Post("/", resourceHandler.CreateResource)
@@ -88,11 +88,8 @@ func SetupAPIRoutes(
 		blockedDate.Put("/:blockedDateId", blockedDateHandler.UpdateBlockedDate)
 		blockedDate.Delete("/:blockedDateId", blockedDateHandler.DeleteBlockedDate)
 
-		// Resource
-		resource := protected.Group("/resources", casbinMiddleware.Authorize())
-
 		// Booking
-		booking := protected.Group("/booking", casbinMiddleware.Authorize())
+		// booking := protected.Group("/booking", casbinMiddleware.Authorize())
 	}
 
 }

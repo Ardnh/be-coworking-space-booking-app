@@ -67,7 +67,7 @@ func (h *ResourceHandlers) GetResourceById(c *fiber.Ctx) error {
 	return http.NewSuccessResponse(c, fiber.StatusOK, "Successfully get resource by id", result)
 }
 
-func (h *ResourceHandlers) GetResource(c *fiber.Ctx) error {
+func (h *ResourceHandlers) GetResources(c *fiber.Ctx) error {
 
 	limit, err := strconv.Atoi(c.Query("pageSize", "10"))
 	if err != nil || limit <= 0 {
@@ -245,7 +245,7 @@ func (h *ResourceHandlers) UpdateResource(c *fiber.Ctx) error {
 	resourceImagesStr := string_utils.ToStringPtr(c.FormValue("images"))
 	var resourceImage []*string
 	if resourceImagesStr != nil {
-		for image := range strings.SplitSeq(*resourceImagesStr, ",") {
+		for _, image := range strings.Split(*resourceImagesStr, ",") {
 			resourceImage = append(resourceImage, string_utils.ToStringPtr(image))
 		}
 	}
