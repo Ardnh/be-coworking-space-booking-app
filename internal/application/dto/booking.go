@@ -13,6 +13,3 @@ type CreateBookingDto struct {
 	TimeTo      string `json:"time_to" validate:"required"`
 	Capacity    int    `json:"capacity" validate:"required"`
 }
-
-type UpdateBookingDto struct {
-}

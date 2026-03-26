@@ -26,6 +26,7 @@ func NewBookingRepostory(db *gorm.DB, redis *redis.Client) repositories.BookingR
 
 func (r *BookingRepositoryImpl) CreateBooking(ctx context.Context, booking *entities.Booking, bookingSlots []*entities.BookingSlots) (*entities.Booking, error) {
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+
 		// 1. Lock resource row — serializes semua booking untuk resource ini
 		var resource entities.Resource
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
