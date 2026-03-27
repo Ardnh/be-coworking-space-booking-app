@@ -25,6 +25,13 @@ const (
 )
 
 const (
+	PaymentStatusPending   = "pending"
+	PaymentStatusCompleted = "completed"
+	PaymentStatusFailed    = "failed"
+	PaymentStatusRefunded  = "refunded"
+)
+
+const (
 	Sunday    int16 = 0
 	Monday    int16 = 1
 	Tuesday   int16 = 2

@@ -7,10 +7,17 @@ import (
 )
 
 type BookingSlots struct {
-	ID         uuid.UUID `gorm:"type:uuid;not null;primaryKey;autoIncrement:false"`
-	BookingID  uuid.UUID `gorm:"type:uuid;not null;index:idx_booking_slots_booking_id"`
-	ResourceID uuid.UUID `gorm:"type:uuid;not null;index:idx_booking_slots_resource_id"`
-	SlotDate   time.Time `gorm:"type:date;not null;index:idx_booking_slots_slot_date"`
-	SlotHour   int       `gorm:"type:int;not null;index:idx_booking_slots_slot_hour"`
-	Seats      int       `gorm:"type:int;not null;check:seats > 0"`
+	BookingSlotID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	BookingID     uuid.UUID `gorm:"type:uuid;not null"`
+	SlotDate      time.Time `gorm:"type:date;not null"`
+	SlotHour      int       `gorm:"not null"`
+	CreatedAt     time.Time `gorm:"autoCreateTime"`
+	UpdatedAt     time.Time `gorm:"autoUpdateTime"`
+
+	// Relasi ke Booking (opsional, untuk preload)
+	Booking *Booking `gorm:"foreignKey:BookingID;constraint:OnDelete:CASCADE"`
+}
+
+func (BookingSlots) TableName() string {
+	return "booking_slots"
 }

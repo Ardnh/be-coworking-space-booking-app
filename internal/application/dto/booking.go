@@ -6,10 +6,10 @@ type BookingDto struct {
 
 // ============== Request DTOs ==============
 type CreateBookingDto struct {
-	UserID      string `json:"user_id" validate:"required"`
-	ResourceID  string `json:"resource_id" validate:"required"`
-	BookingDate string `json:"booking_date" validate:"requiried"`
-	TimeFrom    string `json:"time_from" validate:"required"`
-	TimeTo      string `json:"time_to" validate:"required"`
-	Capacity    int    `json:"capacity" validate:"required"`
+	UserID      string           `json:"user_id" validate:"required"`
+	ResourceID  string           `json:"resource_id" validate:"required"`
+	TotalPrice  float64          `json:"total_price" validate:"required"`
+	BookingCode string           `json:"booking_code,omitempty"`
+	Seats       int              `json:"seats" validate:"required,gte=1"`
+	BookingTime []BookingSlotDto `json:"booking_time" validate:"required"`
 }

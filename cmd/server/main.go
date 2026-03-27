@@ -85,7 +85,7 @@ func main() {
 	resourceService := service.NewResourceService(resourceRepository, cld, logger)
 	resourceTypeService := service.NewResourceTypeService(resourceTypeRepository, logger)
 	blockedDateService := service.NewBlockedDateService(blockedDateRepository, logger)
-	bookingService := service.NewBookingRepository(bookingRepostory, logger)
+	bookingService := service.NewBookingRepository(bookingRepostory, resourceRepository, logger)
 
 	// Handler
 	userHandler := handlers.NewUserHandlers(userService, validator, logger)

@@ -35,6 +35,8 @@ func (r *BookingRepositoryImpl) CreateBooking(ctx context.Context, booking *enti
 		}
 
 		// 2. Kumpulkan slot hours yang diminta
+		//    diambil dari bookingSlots yang di kirim user
+		// 	  bookingSlots adalah daftar slot waktu yang diminta oleh user
 		slotHours := make([]int, len(bookingSlots))
 		for i, slot := range bookingSlots {
 			slotHours[i] = slot.SlotHour
@@ -52,7 +54,7 @@ func (r *BookingRepositoryImpl) CreateBooking(ctx context.Context, booking *enti
 			Joins("JOIN bookings ON bookings.booking_id = booking_slots.booking_id AND bookings.status = 'confirmed'").
 			Where(
 				"booking_slots.resource_id = ? AND booking_slots.slot_date = ? AND booking_slots.slot_hour IN ?",
-				booking.ResourceID, bookingSlots[0].SlotDate, slotHours,
+				booking.ResourceID, bookingSlots[0].Date, slotHours,
 			).
 			Group("slot_hour").
 			Find(&usages).Error
@@ -80,6 +82,14 @@ func (r *BookingRepositoryImpl) CreateBooking(ctx context.Context, booking *enti
 		booking.BookingStatus = constants.BookingStatusConfirmed
 		if err := tx.Create(booking).Error; err != nil {
 			return fmt.Errorf("failed to create booking: %w", err)
+		}
+
+		// 7. Insert booking_slots
+		for _, slot := range bookingSlots {
+			slot.BookingID = booking.BookingID
+			if err := tx.Create(slot).Error; err != nil {
+				return fmt.Errorf("failed to create booking slot %d:00-%d:00: %w", slot.SlotHour, slot.SlotHour+1, err)
+			}
 		}
 
 		return nil
