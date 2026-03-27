@@ -59,9 +59,8 @@ func (s *BookingServiceImpl) CreateBooking(ctx context.Context, booking *dto.Cre
 	bookingSlots := make([]entities.BookingSlots, 0, len(booking.BookingTime))
 	for _, slot := range booking.BookingTime {
 		bookingSlots = append(bookingSlots, entities.BookingSlots{
-			Date:     slot.Date,
-			TimeFrom: slot.TimeFrom,
-			TimeTo:   slot.TimeTo,
+			SlotDate: slot.Date,
+			SlotHour: slot.SlotHour,
 		})
 	}
 
