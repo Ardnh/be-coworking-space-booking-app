@@ -103,7 +103,14 @@ func (r *BookingRepositoryImpl) CreateBooking(ctx context.Context, booking *enti
 	return booking, nil
 }
 
-func (r *BookingRepositoryImpl) GetSlotAvailability(ctx context.Context, resourceID string, date string, seats int, selectedTime []int) ([]*entities.BookingSlots, error) {
+func (r *BookingRepositoryImpl) GetSlotAvailability(ctx context.Context, resourceID string, date string, seats int) ([]*entities.BookingSlots, error) {
+	var bookingSlots []*entities.BookingSlots
 
-	return nil, nil
+	query := r.db.WithContext(ctx).Where("resource_id = ? AND slot_date = ? AND seats_available >= ?", resourceID, date, seats)
+
+	if err := query.Find(&bookingSlots).Error; err != nil {
+		return nil, err
+	}
+
+	return bookingSlots, nil
 }

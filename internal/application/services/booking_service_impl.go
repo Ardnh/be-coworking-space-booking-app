@@ -80,12 +80,12 @@ func (s *BookingServiceImpl) CreateBooking(ctx context.Context, booking *dto.Cre
 	return bookingDto, nil
 }
 
-func (s *BookingServiceImpl) GetSlotAvailability(ctx context.Context, req dto.GetSlotAvailabilityRequestDto) ([]dto.SlotAvailabilityDto, error) {
+func (s *BookingServiceImpl) GetSlotAvailability(ctx context.Context, req dto.GetSlotAvailabilityRequestDto) ([]*dto.SlotAvailabilityDto, error) {
+
+	result, err := s.repo.GetSlotAvailability(ctx, req.ResourceID, req.SelectedDate, req.Seats)
+	if err != nil {
+		return nil, err
+	}
 
 	return nil, nil
-}
-
-func (s *BookingServiceImpl) CancelBooking(ctx context.Context, bookingId string) error {
-
-	return nil
 }
