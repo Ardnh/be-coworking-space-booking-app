@@ -11,6 +11,7 @@ func init() {
 					CREATE TABLE booking_slots (
 						booking_slot_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 						booking_id UUID NOT NULL,
+						resource_id UUID NOT NULL,
 						slot_date DATE NOT NULL,
 						slot_hour INT  NOT NULL,
 						created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

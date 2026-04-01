@@ -7,6 +7,7 @@ import (
 )
 
 type BookingService interface {
-	CreateBooking(c context.Context, booking *dto.CreateBookingDto) (*dto.BookingDto, error)
-	CancelBooking(c context.Context, bookingId string) error
+	CreateBooking(ctx context.Context, booking *dto.CreateBookingRequestDto) (*dto.BookingDto, error)
+	GetSlotAvailability(ctx context.Context, req dto.GetSlotAvailabilityRequestDto) ([]*dto.SlotAvailabilityDto, error)
+	CancelBooking(ctx context.Context, bookingId string) error
 }

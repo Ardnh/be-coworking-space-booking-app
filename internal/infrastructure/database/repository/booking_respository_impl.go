@@ -48,13 +48,14 @@ func (r *BookingRepositoryImpl) CreateBooking(ctx context.Context, booking *enti
 			SlotHour    int
 			BookedSeats int
 		}
+
 		var usages []SlotUsage
 		err := tx.Model(&entities.BookingSlots{}).
 			Select("slot_hour, COALESCE(SUM(bookings.seats), 0) as booked_seats").
 			Joins("JOIN bookings ON bookings.booking_id = booking_slots.booking_id AND bookings.status = 'confirmed'").
 			Where(
 				"booking_slots.resource_id = ? AND booking_slots.slot_date = ? AND booking_slots.slot_hour IN ?",
-				booking.ResourceID, bookingSlots[0].Date, slotHours,
+				booking.ResourceID, bookingSlots[0].SlotDate, slotHours,
 			).
 			Group("slot_hour").
 			Find(&usages).Error
@@ -100,4 +101,9 @@ func (r *BookingRepositoryImpl) CreateBooking(ctx context.Context, booking *enti
 	}
 
 	return booking, nil
+}
+
+func (r *BookingRepositoryImpl) GetSlotAvailability(ctx context.Context, resourceID string, date string, seats int, selectedTime []int) ([]*entities.BookingSlots, error) {
+
+	return nil, nil
 }
