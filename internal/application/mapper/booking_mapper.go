@@ -18,3 +18,9 @@ func ToBookingDto(booking *entities.Booking) *dto.BookingDto {
 		CreatedAt:     booking.CreatedAt.Format("2006-01-02T15:04:05"),
 	}
 }
+
+func ToSlotAvailabilityDto(resourceOpenHour int, resourceCloseHour int, resourceMaxSlotPerHour int, slot []*entities.AvailabilitySlot) []dto.SlotAvailabilityDto {
+
+	//
+
+}

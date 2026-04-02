@@ -11,24 +11,24 @@ import (
 )
 
 type Resource struct {
-	ResourceID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	VendorID          uuid.UUID `gorm:"type:uuid;not null;index"`
-	ResourceName      string    `gorm:"type:varchar(255);not null;index:idx_resources_resource_name"`
-	ResourceTypeID    uuid.UUID `gorm:"type:uuid;not null"`
-	Description       *string   `gorm:"type:text"`
-	Capacity          int       `gorm:"type:int;not null"`
-	OperationTimeFrom string    `gorm:"type:varchar(5);not null"` // Format HH:MM:SS => ex: 09:00:00
-	OperationTimeTo   string    `gorm:"type:varchar(5);not null"` // Format HH:MM:SS => ex: 09:00:00
-	EndDate           time.Time `gorm:"type:date;not null"`
-	PricePerUnit      float64   `gorm:"type:decimal(10,2);not null"`
-	Images            []*string `gorm:"type:jsonb;serializer:json"` // Nullable JSONB
-	Location          *string   `gorm:"type:varchar(255)"`          // Nullable
-	Status            string    `gorm:"type:varchar(20);not null;default:'active';check:status IN ('active','inactive')"`
-
+	ResourceID         uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	VendorID           uuid.UUID `gorm:"type:uuid;not null;index"`
+	ResourceTypeID     uuid.UUID `gorm:"type:uuid;not null"`
+	ResourceName       string    `gorm:"type:varchar(255);not null;index:idx_resources_resource_name"`
+	Description        *string   `gorm:"type:text"`
+	MaxSeatsPerSession int       `gorm:"type:int;not null;check:max_seats_per_session > 0"` // fix: hapus comment "per jam"
+	SessionDuration    int       `gorm:"type:smallint;not null;check:session_duration > 0"` // fix: smallint, tambah check
+	OperationTimeFrom  int       `gorm:"type:smallint;not null;check:operation_time_from >= 0 AND operation_time_from <= 23"`
+	OperationTimeTo    int       `gorm:"type:smallint;not null;check:operation_time_to >= 1 AND operation_time_to <= 24"` // 24 = midnight
+	StartDate          time.Time `gorm:"type:date;not null"`                                                              // fix: tambah StartDate
+	EndDate            time.Time `gorm:"type:date;not null"`
+	PricePerSession    float64   `gorm:"type:decimal(10,2);not null;check:price_per_session > 0"` // fix: PricePerUnit → PricePerSession
+	Images             []*string `gorm:"type:jsonb;serializer:json"`
+	Location           *string   `gorm:"type:varchar(255)"`
+	Status             string    `gorm:"type:varchar(20);not null;default:'active';check:status IN ('active','inactive')"`
 	// Relationships
 	Vendor       *Vendor       `gorm:"foreignKey:VendorID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	ResourceType *ResourceType `gorm:"foreignKey:ResourceTypeID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
-
 	// Timestamps
 	CreatedAt time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP"`
 	UpdatedAt time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP"`
